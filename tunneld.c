@@ -4,7 +4,29 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <zconf.h>
+#include <errno.h>
+#include <fcntl.h>
 
+
+int make_socket_non_blocking (int fd) {
+    int flags, s;
+    // 获取当前flag
+    flags = fcntl(fd, F_GETFL, 0);
+    if (-1 == flags) {
+        perror("Get fd status");
+        return -1;
+    }
+
+    flags |= O_NONBLOCK;
+
+    // 设置flag
+    s = fcntl(fd, F_SETFL, flags);
+    if (-1 == s) {
+        perror("Set fd status");
+        return -1;
+    }
+    return 0;
+}
 int main() {
     int server_sockfd;//服务器端套接字
     int client_sockfd;//客户端套接字
@@ -60,18 +82,25 @@ int main() {
         return 1;
     }
 
-    /*将套接字绑定到服务器的网络地址上*/
-    if (bind(fd, (struct sockaddr *) &my_addr, sizeof(struct sockaddr)) < 0) {
-        perror("bind");
-        return 1;
-    }
-
+    printf("make non-blocking: %d\n", make_socket_non_blocking(fd));
     if (connect(fd, (struct sockaddr *) &remote_addr, sizeof(struct sockaddr)) < 0) {
         perror("connect");
-        return 1;
+        //return 1;
     }
 
-    len = send(fd, "Welcome to my server\n", 21, 0);//发送欢迎信息
+    usleep(1000);
+
+    len = send(fd, &fd, 1025, 0);//发送欢迎信息
+    while (1) {
+        if (send(fd, "ok\n", 1024, 0) == -1) {
+            ssize_t i = send(fd, &fd, 1, 0);
+            if (i == -1) {
+                printf("send len:%d\n", i);
+            }
+        }
+    }
+    //printf("send len:%d\n", send(fd, &fd, 10, 0));
+    perror("send:");
 
     /*接收客户端的数据并将其发送给客户端--recv返回接收到的字节数，send返回发送的字节数*/
     while ((len = recv(fd, buf, BUFSIZ, 0)) > 0) {
