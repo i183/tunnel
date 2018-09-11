@@ -32,4 +32,6 @@ typedef int boolean;
 
 void error(char *s);
 
+int make_socket_non_blocking(int fd);
+
 #endif //LEARN_C_COMMON_H

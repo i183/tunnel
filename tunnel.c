@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include <string.h>
 
 int main() {
-    printf("This is the client!\n");
+    printf("%d\n", strcmp("aaa", ""));
+
     return 0;
 }
