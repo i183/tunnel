@@ -10,6 +10,7 @@
 #include <string.h>
 #include "server.h"
 #include "../common/global.h"
+#include "tunnel.h"
 
 #define MAX_EVENT 20
 #define READ_BUF_LEN 1024
@@ -213,24 +214,10 @@ int handler_3(int epfd, const struct epoll_event *e) {
                 break;
             }
 
-            struct tunnel *t = malloc(sizeof(struct tunnel));
-            t->token = "0101"; // TODO 生成Token
-
-            conn->type = S_TUNNEL; //更改类型为隧道
-            conn->ptr = t;
-
-            struct epoll_event ev;
-            ev.data.ptr = conn;
-            ev.events = EPOLLIN | EPOLLOUT | EPOLLET; //边缘触发选项
-
-            // 更改epoll事件 增加 EPOLLOUT 事件
-            if (epoll_ctl(epfd, EPOLL_CTL_MOD, conn->fd, &ev) == -1) {
-                perror("epoll_ctl");
+            if (create_tunnel(epfd, conn) == -1) {
                 done = true;
                 break;
             }
-
-            printf("Change type to tunnel.\n");
             break;
         } else if (strcmp(command, "pull") == 0) {
             printf("pull\n");
