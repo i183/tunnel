@@ -18,6 +18,8 @@
 struct connection {
     int fd;
     char type; //1.监听客户端请求的Socket 2.监听用户请求的Socket 3.未知 4.与客户端建立的隧道 5.客户端处理请求连接 6.用户的请求连接
+    void *write_buf; //等待写入的数据
+    size_t len; //等待写入数据的长度
     void *ptr; //额外数据指针
 };
 
@@ -35,41 +37,5 @@ struct user_conn {
 };
 
 int start(int port, char *password);
-
-/**
- * 处理"监听客户端请求的Socket"事件
- * @return
- */
-int handler_1(int epfd, const struct epoll_event *e);
-
-/**
- * 处理"监听用户请求的Socket"事件
- * @return
- */
-int handler_2(int epfd, const struct epoll_event *e);
-
-/**
- * 处理"未知"事件
- * @return
- */
-int handler_3(int epfd, const struct epoll_event *e);
-
-/**
- * 处理"与客户端建立的隧道"事件
- * @return
- */
-int handler_4(int epfd, const struct epoll_event *e);
-
-/**
- * 处理"客户端处理请求连接"事件
- * @return
- */
-int handler_5(int epfd, const struct epoll_event *e);
-
-/**
- * 处理"用户的请求连接"事件
- * @return
- */
-int handler_6(int epfd, const struct epoll_event *e);
 
 #endif //TUNNEL_SERVER_H

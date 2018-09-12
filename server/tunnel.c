@@ -1,12 +1,13 @@
-//
-// Created by maqian on 2018/9/11.
-//
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/epoll.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <memory.h>
 #include "tunnel.h"
 #include "server.h"
+#include "common.h"
+#include "listener.h"
 
 int create_tunnel(int epfd, struct connection *conn) {
     struct tunnel *t = malloc(sizeof(struct tunnel));
@@ -25,6 +26,29 @@ int create_tunnel(int epfd, struct connection *conn) {
         return -1;
     }
 
+    int listenfd = create_listener(0, 200, false, true);
+    if (listenfd == -1) {
+        return -1;
+    }
+
+    struct connection *listen_user_conn = create_conn(listenfd, S_LISTEN_USER, null);
+
+    ev.data.ptr = listen_user_conn;
+    ev.events = EPOLLIN | EPOLLET;//边缘触发选项
+
+    // 设置epoll的事件
+    if (epoll_ctl(epfd, EPOLL_CTL_ADD, listenfd, &ev) == -1) {
+        perror("Set epoll_ctl");
+        return -1;
+    }
+
+    struct sockaddr_in addr;
+    getsockname(listen_user_conn->fd, (struct sockaddr *) &addr, sizeof(struct sockaddr_in));
+
+    char msg[256];
+    msg[0] = 0;
+    strcat(msg, "success ");
+
     printf("Change type to tunnel.\n");
-    return 0;
+    return listenfd;
 }

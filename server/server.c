@@ -11,71 +11,41 @@
 #include "server.h"
 #include "../common/global.h"
 #include "tunnel.h"
+#include "common.h"
+#include "listener.h"
 
 #define MAX_EVENT 20
 #define READ_BUF_LEN 1024
 
 const char *pw = null;
 
-struct connection *create_conn(int fd, int type, void *ptr) {
-    struct connection *conn = malloc(sizeof(struct connection));
-    conn->fd = fd;
-    conn->type = type;
-    conn->ptr = null;
-    return conn;
-}
+int handler_write(const struct epoll_event *e);
 
-int close_conn(struct connection *conn) {
-    printf("Closed connection, fd: %d  type: %d\n", conn->fd, conn->type);
-    int res = close(conn->fd);
-    if (conn->ptr) {
-        free(conn->ptr); // TODO 删除指针数据
-    }
-    free(conn);
-    return res;
-}
+int handler_1(int epfd, const struct epoll_event *e);
+
+int handler_2(int epfd, const struct epoll_event *e);
+
+int handler_3(int epfd, const struct epoll_event *e);
+
+int handler_4(int epfd, const struct epoll_event *e);
+
+int handler_5(int epfd, const struct epoll_event *e);
+
+int handler_6(int epfd, const struct epoll_event *e);
+
 
 int start(int port, char *password) {
     pw = password;
 
     int epfd = 0;
-    int listenfd = 0;
+    int listenfd = create_listener(port, 200, true, true);
+    //验证listener是否创建成功
+    if (listenfd == -1) {
+        return -1;
+    }
+    struct connection *conn = create_conn(listenfd, S_LISTEN_CLIENT, NULL);
 
     struct epoll_event ev, event[MAX_EVENT];
-
-    struct sockaddr_in server_addr = {0};
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(port);
-
-    listenfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (-1 == listenfd) {
-        perror("Open listen socket");
-        return -1;
-    }
-
-    int on = 1;
-    // 打开 socket 端口复用, 防止测试的时候出现 Address already in use
-    if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1) {
-        perror("Set socket");
-        return -1;
-    }
-
-    //绑定端口
-    if (bind(listenfd, (const struct sockaddr *) &server_addr, sizeof(server_addr)) == -1) {
-        perror("Bind port");
-        return -1;
-    }
-
-    if (make_socket_non_blocking(listenfd) == -1) {
-        perror("Make socket non blocking");
-        return -1;
-    }
-
-    if (listen(listenfd, 200) == -1) {
-        perror("Start listen");
-        return -1;
-    }
 
     // 创建epoll实例
     epfd = epoll_create1(0);
@@ -83,8 +53,6 @@ int start(int port, char *password) {
         perror("Create epoll instance");
         return -1;
     }
-
-    struct connection *conn = create_conn(listenfd, S_LISTEN_CLIENT, NULL);
 
     ev.data.ptr = conn;
     ev.events = EPOLLIN | EPOLLET;//边缘触发选项
@@ -111,6 +79,15 @@ int start(int port, char *password) {
                 continue;
             }
 
+            //可写事件
+            if (events & EPOLLOUT) {
+                if (handler_write(&e) == -1) {
+                    //写入数据出错，关闭连接
+                    close_conn(conn);
+                    continue;
+                }
+            }
+
             if (conn->type == 1) {
                 handler_1(epfd, &e);
             } else if (conn->type == 2) {
@@ -128,6 +105,32 @@ int start(int port, char *password) {
         }
     }
 
+    return 0;
+}
+
+/**
+ * 处理写入事件
+ * @param e
+ * @return
+ */
+int handler_write(const struct epoll_event *e) {
+    struct connection *conn = (struct connection *) e->data.ptr;
+    //检测是否有待写数据
+    if (conn->len <= 0) {
+        return 0;
+    }
+
+    ssize_t len = write(conn->fd, conn->write_buf, conn->len);
+    if ((len == -1 && EAGAIN != errno) || len == 0) {
+        //写入数据时出错或连接关闭
+        perror("write");
+        return -1;
+    } else if (len > 0) {
+        //写入数据成功
+        //删除待写数据
+        free(conn->write_buf);
+        conn->len = 0;
+    }
     return 0;
 }
 
@@ -192,7 +195,7 @@ int handler_3(int epfd, const struct epoll_event *e) {
                 done = true;
             }
             break;
-        } else if (!len) {
+        } else if (len == 0) {
             done = true;
             break;
         }
@@ -209,7 +212,7 @@ int handler_3(int epfd, const struct epoll_event *e) {
             if (strcmp(password, pw)) {
                 //密码错误
                 char *str = "密码错误";
-                write(conn->fd, str, strlen(str));
+                write_data(conn, str, strlen(str));
                 done = true;
                 break;
             }
