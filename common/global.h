@@ -34,4 +34,12 @@ void error(char *s);
 
 int make_socket_non_blocking(int fd);
 
+void line_to_zero(char *s);
+
+/**
+ * 获取系统类型
+ * @return 1.linux 2.os x 3.windows 4.其他
+ */
+int get_system_type();
+
 #endif //LEARN_C_COMMON_H

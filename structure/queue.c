@@ -82,6 +82,10 @@ void inQueueForChar(Queue q, char item) {
     inQueue(q, &item);
 }
 
+void inQueueForPointer(Queue q, void *item) {
+    inQueue(q, &item);
+}
+
 
 int outQueueForInt(Queue q) {
     int item;
@@ -103,6 +107,12 @@ double outQueueForDouble(Queue q) {
 
 char outQueueForChar(Queue q) {
     char item;
+    outQueue(q, &item);
+    return item;
+}
+
+void *outQueueForPointer(Queue q) {
+    void *item;
     outQueue(q, &item);
     return item;
 }

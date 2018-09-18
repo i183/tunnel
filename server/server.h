@@ -4,6 +4,7 @@
 
 #include <sys/epoll.h>
 #include "../common/global.h"
+#include "../structure/queue.h"
 
 #ifndef TUNNEL_SERVER_H
 #define TUNNEL_SERVER_H
@@ -23,17 +24,23 @@ struct connection {
     void *ptr; //额外数据指针
 };
 
+struct listen_user {
+    struct connection *tunnel_conn;
+    int port; //监听的端口号
+    Queue queue;
+};
+
 struct tunnel {
+    struct connection *listen_user_conn;
     char *token; //客户端处理请求连接时需要验证Token
 };
 
 struct client_conn {
-    boolean is_auth; //身份是否验证
-    int user_conn_fd; //用户请求连接的描述文件
+    struct connection *user_conn;
 };
 
 struct user_conn {
-    int client_conn_fd; //客户端处理请求连接的描述文件
+    struct connection *client_conn;
 };
 
 int start(int port, char *password);

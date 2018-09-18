@@ -5,6 +5,7 @@
 #include <memory.h>
 #include "common.h"
 #include "server.h"
+#include "tunnel.h"
 
 struct connection *create_conn(int fd, int type, void *ptr) {
     struct connection *conn = malloc(sizeof(struct connection));
@@ -12,15 +13,25 @@ struct connection *create_conn(int fd, int type, void *ptr) {
     conn->type = type;
     conn->write_buf = null;
     conn->len = 0;
-    conn->ptr = null;
+    conn->ptr = ptr;
     return conn;
 }
 
 int close_conn(struct connection *conn) {
     printf("Closed connection, fd: %d  type: %d\n", conn->fd, conn->type);
+    if (conn->type == S_TUNNEL) {
+        remove_tunnel(conn->fd);
+    } else if (conn->type == S_LISTEN_USER) {
+        struct listen_user *lu = conn->ptr;
+        while (!isQueueEmpty(lu->queue)) {
+            close_conn(outQueueForPointer(lu->queue));
+        }
+        freeQueue(lu->queue);
+    }
+
     int res = close(conn->fd);
     if (conn->ptr) {
-        free(conn->ptr); // TODO 删除指针数据
+        free(conn->ptr);
     }
     if (conn->write_buf) {
         free(conn->write_buf);

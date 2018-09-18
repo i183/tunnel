@@ -12,7 +12,7 @@ typedef struct QueueNode {
 
 } QueueData, *QueueDataPtr;
 
-typedef struct QueueStructure{
+typedef struct QueueStructure {
 
     QueueData *head;//队列头指针
 
@@ -94,6 +94,13 @@ void inQueueForDouble(Queue q, double item);
  */
 void inQueueForChar(Queue q, char item);
 
+/**
+ * 插入指针
+ * @param sp
+ * @param item
+ */
+void inQueueForPointer(Queue q, void *item);
+
 
 /**
  * 出队列int
@@ -122,4 +129,12 @@ double outQueueForDouble(Queue q);
  * @param item
  */
 char outQueueForChar(Queue q);
+
+/**
+ * 出队列指针
+ * @param sp
+ * @param item
+ */
+void *outQueueForPointer(Queue q);
+
 #endif //LEARN_C_QUEUE_H
