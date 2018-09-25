@@ -107,6 +107,13 @@ void addArrayForDouble(Array arr, double item);
 void addArrayForChar(Array arr, char item);
 
 /**
+ * 插入指针
+ * @param arr
+ * @param item
+ */
+void addArrayForPointer(Array arr, void *item);
+
+/**
  * 指定位置插入Int
  * @param arr
  * @param item
@@ -135,6 +142,13 @@ void insertArrayForDouble(Array arr, int index, double item);
 void insertArrayForChar(Array arr, int index, char item);
 
 /**
+ * 指定位置插入指针
+ * @param arr
+ * @param item
+ */
+void insertArrayForPointer(Array arr, int index, void *item);
+
+/**
  * 获取Int数据
  * @param arr
  * @param index
@@ -161,5 +175,12 @@ double getArrayForDouble(Array arr, int index);
  * @param index
  */
 char getArrayForChar(Array arr, int index);
+
+/**
+ * 获取指针数据
+ * @param arr
+ * @param index
+ */
+void *getArrayForPointer(Array arr, int index);
 
 #endif //LEARN_C_ARRAY_H

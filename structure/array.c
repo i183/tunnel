@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "array.h"
 #include "../common/global.h"
@@ -52,6 +53,7 @@ Array newArrayDefault(int typeSize) {
 }
 
 void addArray(Array arr, void *item) {
+
     if (isFullCapacity(arr)) {
         expand(arr);
     }
@@ -116,6 +118,10 @@ void addArrayForChar(Array arr, char item) {
     addArray(arr, &item);
 }
 
+void addArrayForPointer(Array arr, void *item) {
+    addArray(arr, &item);
+}
+
 void insertArrayForInt(Array arr, int index, int item) {
     insertArray(arr, index, &item);
 }
@@ -129,6 +135,10 @@ void insertArrayForDouble(Array arr, int index, double item) {
 }
 
 void insertArrayForChar(Array arr, int index, char item) {
+    insertArray(arr, index, &item);
+}
+
+void insertArrayForPointer(Array arr, int index, void *item) {
     insertArray(arr, index, &item);
 }
 
@@ -152,6 +162,12 @@ double getArrayForDouble(Array arr, int index) {
 
 char getArrayForChar(Array arr, int index) {
     char item;
+    getArray(arr, index, &item);
+    return item;
+}
+
+void *getArrayForPointer(Array arr, int index) {
+    void *item;
     getArray(arr, index, &item);
     return item;
 }

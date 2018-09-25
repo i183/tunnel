@@ -3,8 +3,11 @@
 #include <stdlib.h>
 #include "structure/queue.h"
 #include "common/global.h"
+#include "structure/array.h"
 
 int main() {
-    printf("%d\n", get_system_type());
+    void *p = malloc(10);
+    free(p);
+    free(p);
     return 0;
 }

@@ -22,6 +22,8 @@
 
 const char *pw = null;
 
+Array tag;
+
 int handler_write(const struct epoll_event *e);
 
 int handler_1(int epfd, const struct epoll_event *e);
@@ -39,6 +41,7 @@ int handler_6(int epfd, const struct epoll_event *e);
 
 int start(int port, char *password) {
     pw = password;
+    tag = newArrayDefault(sizeof(struct connection *));
     initTunnelMap(TUNNEL_MAP_SIZE);
 
     int epfd = 0;
@@ -79,17 +82,21 @@ int start(int port, char *password) {
             // 判断epoll是否发生错误
             if (events & EPOLLERR || events & EPOLLHUP) {
                 printf("Epoll has error\n");
-                close_conn(conn);
+                tag_close_conn(conn, tag);
                 continue;
             }
 
             //可写事件
-            if (events & EPOLLOUT) {
+            if (events & EPOLLOUT && conn->tag_close == false) {
                 if (handler_write(&e) == -1) {
                     //写入数据出错，关闭连接
-                    close_conn(conn);
+                    tag_close_conn(conn, tag);
                     continue;
                 }
+            }
+
+            if (conn->tag_close == true) {
+                continue;
             }
 
             if (conn->type == 1) {
@@ -105,6 +112,9 @@ int start(int port, char *password) {
             } else if (conn->type == 6) {
                 handler_6(epfd, &e);
             }
+
+            close_conn_arr(tag);
+            resetArrayEmpty(tag);
 
         }
     }
@@ -248,6 +258,7 @@ int handler_1(int epfd, const struct epoll_event *e) {
  * @return
  */
 int handler_2(int epfd, const struct epoll_event *e) {
+    printf("h2\n");
     struct connection *conn = (struct connection *) e->data.ptr;
     while (true) {
         struct sockaddr_in in_addr = {0};
@@ -272,8 +283,7 @@ int handler_2(int epfd, const struct epoll_event *e) {
         sprintf(msg, "%s\n", REQUEST);
         int flag = write_data(lu->tunnel_conn, msg, strlen(msg)); //通知客户端有新的请求
         if (flag == -1) {
-            close_conn(lu->tunnel_conn);
-            close_conn(conn);
+            tag_close_conn(conn, tag);
             break;
         }
 
@@ -286,6 +296,7 @@ int handler_2(int epfd, const struct epoll_event *e) {
  * @return
  */
 int handler_3(int epfd, const struct epoll_event *e) {
+    printf("h3\n");
     struct connection *conn = (struct connection *) e->data.ptr;
     boolean done = false;
     while (true) {
@@ -338,7 +349,7 @@ int handler_3(int epfd, const struct epoll_event *e) {
     }
 
     if (done) {
-        close_conn(conn);
+        tag_close_conn(conn, tag);
     }
     return 0;
 }
@@ -348,6 +359,7 @@ int handler_3(int epfd, const struct epoll_event *e) {
  * @return
  */
 int handler_4(int epfd, const struct epoll_event *e) {
+    printf("h4\n");
     struct connection *conn = (struct connection *) e->data.ptr;
     boolean done = false;
     while (true) {
@@ -375,9 +387,7 @@ int handler_4(int epfd, const struct epoll_event *e) {
     }
 
     if (done) {
-        struct tunnel *tp = conn->ptr;
-        close_conn(tp->listen_user_conn);
-        close_conn(conn);
+        tag_close_conn(conn, tag);
     }
     return 0;
 }
@@ -387,21 +397,20 @@ int handler_4(int epfd, const struct epoll_event *e) {
  * @return
  */
 int handler_5(int epfd, const struct epoll_event *e) {
+    printf("h5\n");
     struct connection *conn = (struct connection *) e->data.ptr;
     struct connection *uc = ((struct client_conn *) conn->ptr)->user_conn;
 
     if (e->events & EPOLLIN) {
         if (read_write_client(conn) == -1) {
-            close_conn(uc);
-            close_conn(conn);
+            tag_close_conn(conn, tag);
             return -1;
         }
     }
 
     if (e->events & EPOLLOUT) {
         if (read_write_user(uc) == -1) {
-            close_conn(uc);
-            close_conn(conn);
+            tag_close_conn(conn, tag);
             return -1;
         }
     }
@@ -414,21 +423,20 @@ int handler_5(int epfd, const struct epoll_event *e) {
  * @return
  */
 int handler_6(int epfd, const struct epoll_event *e) {
+    printf("h6\n");
     struct connection *conn = (struct connection *) e->data.ptr;
     struct connection *cc = ((struct user_conn *) conn->ptr)->client_conn;
 
     if (e->events & EPOLLIN) {
         if (read_write_user(conn) == -1) {
-            close_conn(cc);
-            close_conn(conn);
+            tag_close_conn(conn, tag);
             return -1;
         }
     }
 
     if (e->events & EPOLLOUT) {
         if (read_write_client(cc) == -1) {
-            close_conn(cc);
-            close_conn(conn);
+            tag_close_conn(conn, tag);
             return -1;
         }
     }
