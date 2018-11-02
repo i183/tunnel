@@ -51,6 +51,14 @@ void addArray(Array arr, void *item);
 void insertArray(Array arr, int index, void *item);
 
 /**
+ * 设置指定元素值
+ * @param arr
+ * @param index
+ * @param item
+ */
+void setArray(Array arr, int index, void *item);
+
+/**
  * 删除元素
  * @param arr
  * @param index

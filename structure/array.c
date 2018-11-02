@@ -76,6 +76,11 @@ void insertArray(Array arr, int index, void *item) {
     arr->size++;
 }
 
+void setArray(Array arr, int index, void *item) {
+    rangeCheck(arr, index);
+    memcpy(arr->data + index * arr->typeSize, item, arr->typeSize);
+}
+
 void removeArray(Array arr, int index) {
     rangeCheck(arr, index);
 
