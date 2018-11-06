@@ -1,4 +1,7 @@
+#include <fcntl.h>
+#include <stdio.h>
 #include "os.h"
+#include "client.h"
 #include "../common/global.h"
 
 int sock_init() {
@@ -33,14 +36,24 @@ int closesocket(SOCKET sock) {
 
 }
 
-SOCKET getArrayForSOCKET(Array arr, int index) {
-    SOCKET item;
-    getArray(arr, index, &item);
-    return item;
-}
+int set_socket_non_blocking(SOCKET sock) {
+    int flags, s;
+    // 获取当前flag
+    flags = fcntl(sock, F_GETFL, 0);
+    if (-1 == flags) {
+        perror("Get fd status");
+        return -1;
+    }
 
-void setArrayForSOCKET(Array arr, int index, SOCKET sock) {
-    setArray(arr, index, &sock);
+    flags |= O_NONBLOCK;
+
+    // 设置flag
+    s = fcntl(sock, F_SETFL, flags);
+    if (-1 == s) {
+        perror("Set fd status");
+        return -1;
+    }
+    return 0;
 }
 
 void fd_set_to_fd_list(fd_list *fl, fd_set *fs) {
@@ -48,12 +61,12 @@ void fd_set_to_fd_list(fd_list *fl, fd_set *fs) {
         fl->num = 0;
         Array li = fl->li;
         for (int i = 0; i < li->size; i++) {
-            SOCKET sock = getArrayForSOCKET(li, i);
-            if (FD_ISSET(sock, fs)) {
+            struct connection *conn = getArrayForPointer(li, i);
+            if (FD_ISSET(conn->fd, fs)) {
                 if (fl->num != i) {
-                    SOCKET temp = getArrayForSOCKET(li, fl->num);
-                    setArrayForSOCKET(li, fl->num, sock);
-                    setArrayForSOCKET(li, i, temp);
+                    struct connection *temp = getArrayForPointer(li, fl->num);
+                    setArrayForPointer(li, fl->num, conn);
+                    setArrayForPointer(li, i, temp);
                 }
                 fl->num++;
             }
@@ -67,8 +80,9 @@ int get_max_fd(fd_list *fl) {
     if (fl && fl->li) {
         Array li = fl->li;
         for (int i = 0; i < li->size; i++) {
-            if (getArrayForInt(li, i) > max) {
-                max = getArrayForInt(li, i);
+            struct connection *conn = getArrayForPointer(li, i);
+            if (conn->fd > max) {
+                max = conn->fd;
             }
         }
     }
@@ -80,8 +94,8 @@ void fd_list_to_fd_set(fd_list *fl, fd_set *fs) {
     if (fl && fl->li) {
         Array li = fl->li;
         for (int i = 0; i < li->size; i++) {
-            SOCKET sock = getArrayForSOCKET(li, i);
-            FD_SET(sock, fs);
+            struct connection *conn = getArrayForPointer(li, i);
+            FD_SET(conn->fd, fs);
         }
     }
 }

@@ -147,6 +147,10 @@ void insertArrayForPointer(Array arr, int index, void *item) {
     insertArray(arr, index, &item);
 }
 
+void setArrayForPointer(Array arr, int index, void *item) {
+    setArray(arr, index, &item);
+}
+
 int getArrayForInt(Array arr, int index) {
     int item;
     getArray(arr, index, &item);

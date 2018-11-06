@@ -41,6 +41,8 @@ int sock_quit();
 
 int closesocket(SOCKET sock);
 
+int set_socket_non_blocking(SOCKET sock);
+
 /**
  * select io
  * @param rl 监测可写列表

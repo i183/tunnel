@@ -156,6 +156,9 @@ void insertArrayForChar(Array arr, int index, char item);
  */
 void insertArrayForPointer(Array arr, int index, void *item);
 
+
+void setArrayForPointer(Array arr, int index, void *item);
+
 /**
  * 获取Int数据
  * @param arr

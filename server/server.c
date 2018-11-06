@@ -112,11 +112,9 @@ int start(int port, char *password) {
             } else if (conn->type == 6) {
                 handler_6(epfd, &e);
             }
-
-            close_conn_arr(tag);
-            resetArrayEmpty(tag);
-
         }
+        close_conn_arr(tag);
+        resetArrayEmpty(tag);
     }
 
     return 0;
