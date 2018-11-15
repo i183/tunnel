@@ -112,6 +112,9 @@ int dist(struct connection *conn) {
     return 0;
 }
 
+void request() {
+}
+
 int handler_1(struct connection *conn) {
     boolean done = false;
     while (true) {
