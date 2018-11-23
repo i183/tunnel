@@ -71,6 +71,18 @@ socket_t socket_stream() {
     return socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 }
 
+sockaddr_t create_sockaddr(char *ip, int port) {
+#ifdef _MSC_VER
+    // Windows create sockaddr
+#else
+    sockaddr_t addr;
+    addr.sin_family = PF_INET;
+    addr.sin_port = htons(port);
+    addr.sin_addr.s_addr = inet_addr(ip);
+    return addr;
+#endif
+}
+
 int socket_close(socket_t s) {
 #ifdef _MSC_VER
     return closesocket(s);
@@ -138,14 +150,6 @@ typedef struct {
     Array li;
     int num; //可写、可读或异常数量
 } fd_list;
-
-int sock_init();
-
-int sock_quit();
-
-int closesocket(SOCKET sock);
-
-int set_socket_non_blocking(SOCKET sock);
 
 /**
  * select io

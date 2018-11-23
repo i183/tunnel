@@ -9,7 +9,7 @@
 #define C_L_SERVER 3
 
 struct connection {
-    SOCKET fd;
+    socket_t fd;
     char type; //1.与服务器建立的隧道 2.远程服务器连接 3.本地服务器连接
     void *write_buf; //等待写入的数据
     int len; //等待写入数据的长度

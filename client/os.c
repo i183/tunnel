@@ -4,58 +4,6 @@
 #include "client.h"
 #include "../common/global.h"
 
-int sock_init() {
-#ifdef _WIN32
-    WSADATA wsa_data;
-    return WSAStartup(MAKEWORD(1,1), &wsa_data);
-#else
-    return 0;
-#endif
-}
-
-int sock_quit() {
-#ifdef _WIN32
-    return WSACleanup();
-#else
-    return 0;
-#endif
-}
-
-int closesocket(SOCKET sock) {
-    int status = 0;
-
-#ifdef _WIN32
-    status = shutdown(sock, SD_BOTH);
-    if (status == 0) { status = closesocket(sock); }
-#else
-    status = shutdown(sock, SHUT_RDWR);
-    if (status == 0) { status = close(sock); }
-#endif
-
-    return status;
-
-}
-
-int set_socket_non_blocking(SOCKET sock) {
-    int flags, s;
-    // 获取当前flag
-    flags = fcntl(sock, F_GETFL, 0);
-    if (-1 == flags) {
-        perror("Get fd status");
-        return -1;
-    }
-
-    flags |= O_NONBLOCK;
-
-    // 设置flag
-    s = fcntl(sock, F_SETFL, flags);
-    if (-1 == s) {
-        perror("Set fd status");
-        return -1;
-    }
-    return 0;
-}
-
 void fd_set_to_fd_list(fd_list *fl, fd_set *fs) {
     if (fl && fl->li && fs) {
         fl->num = 0;

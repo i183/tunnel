@@ -44,24 +44,21 @@ int handler_3(struct connection *conn);
 int create_tunnel(char *ip, int r_port, int l_port, char *password) {
     init();
 
-    SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    socket_t sock = socket_stream();
     if (sock == INVALID_SOCKET) {
         perror("invalid socket");
         return -1;
     }
 
-    struct sockaddr_in dest_addr;
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_port = htons(r_port);
-    dest_addr.sin_addr.s_addr = inet_addr(ip);
+    sockaddr_t dest_addr = create_sockaddr(ip, r_port);
 
     if (connect(sock, (struct sockaddr *) &dest_addr, sizeof(dest_addr)) == SOCKET_ERROR) {
         perror("connect error");
-        closesocket(sock);
+        socket_close(sock);
         return -1;
     }
 
-    if (set_socket_non_blocking(sock) == -1) {
+    if (socket_set_nonblock(sock) == -1) {
         perror("Accept make socket non blocking");
         return -1;
     }
