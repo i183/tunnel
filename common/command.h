@@ -6,6 +6,6 @@
 #define SUCCESS "success"
 #define REQUEST "request"
 
-#define ERROR "error"
+#define C_ERROR "error"
 
 #endif //TUNNEL_COMMAND_H

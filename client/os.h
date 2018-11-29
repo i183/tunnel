@@ -13,11 +13,12 @@
 #define IGNORE_SIGNAL(sig) signal(sig, SIG_IGN)
 
 /* Handle Header Files */
-#ifdef _MSC_VER
+#ifdef _WIN32
 #pragma comment(lib, "ws2_32.lib")
 #undef    FD_SETSIZE
 #define FD_SETSIZE          (1024)
 #include <ws2tcpip.h>
+#include <unistd.h>
 
 #undef    errno
 #define   errno              WSAGetLastError()

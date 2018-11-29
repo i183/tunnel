@@ -2,6 +2,13 @@ project(tunnel C)
 
 set(CMAKE_C_STANDARD 99)
 
+cmake_minimum_required(VERSION 3.10)
+
+if(WIN32)
+    MESSAGE(STATUS "Now is windows")
+    link_libraries(ws2_32 wsock32)
+endif()
+
 if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
 endif()

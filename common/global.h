@@ -12,7 +12,7 @@
 #define null ((void *)0)
 #endif
 
-typedef int boolean;
+typedef unsigned char boolean;
 
 #ifndef TRUE
 #define TRUE 1
@@ -31,8 +31,6 @@ typedef int boolean;
 #endif
 
 void error(char *s);
-
-int make_socket_non_blocking(int fd);
 
 void line_to_zero(char *s);
 

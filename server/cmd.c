@@ -14,7 +14,7 @@ int tunnel_cmd(int epfd, struct connection *conn, const char *cmd, const char *p
     if (strcmp(password, pw)) {
         //密码错误
         char msg[256];
-        sprintf(msg, "%s %s\n", ERROR, "密码错误");
+        sprintf(msg, "%s %s\n", C_ERROR, "密码错误");
         write_data(conn, msg, strlen(msg));
         return -1;
     }
@@ -32,7 +32,7 @@ int pull_cmd(int epfd, struct connection *conn, const char *cmd) {
     sscanf(cmd, "pull %d %s", &fd, token);
     if (fd == -1 || strlen(token) == 0) {
         char msg[256];
-        sprintf(msg, "%s %s\n", ERROR, "参数错误");
+        sprintf(msg, "%s %s\n", C_ERROR, "参数错误");
         write_data(conn, msg, strlen(msg));
         return -1;
     }
@@ -40,7 +40,7 @@ int pull_cmd(int epfd, struct connection *conn, const char *cmd) {
     struct tunnel *tp = get_tunnel(fd)->ptr;
     if (strcmp(token, tp->token) != 0) {
         char msg[256];
-        sprintf(msg, "%s %s\n", ERROR, "Token错误");
+        sprintf(msg, "%s %s\n", C_ERROR, "Token错误");
         write_data(conn, msg, strlen(msg));
         return -1;
     }
@@ -48,7 +48,7 @@ int pull_cmd(int epfd, struct connection *conn, const char *cmd) {
     struct listen_user *lu = tp->listen_user_conn->ptr;
     if (isQueueEmpty(lu->queue)) {
         char msg[256];
-        sprintf(msg, "%s %s\n", ERROR, "没有待处理的连接");
+        sprintf(msg, "%s %s\n", C_ERROR, "没有待处理的连接");
         write_data(conn, msg, strlen(msg));
         return -1;
     }

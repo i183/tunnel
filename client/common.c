@@ -24,7 +24,7 @@ struct connection *create_conn(socket_t fd, int type, boolean is_asyn, void *ptr
 }
 
 void verify_asyn_conn(fd_list *fl, Array tag) {
-    int optval;
+    char optval;
     socklen_t optlen = sizeof(optval);
     for (int i = 0; i < fl->num; ++i) {
         struct connection *conn = getArrayForPointer(fl->li, i);

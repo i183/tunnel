@@ -47,6 +47,8 @@ int create_tunnel(char *ip, int r_port, int l_port, char *password) {
     strcpy(rip, ip);
     rport = r_port;
     lport = l_port;
+
+    socket_start();
     init();
 
     socket_t sock = socket_stream();

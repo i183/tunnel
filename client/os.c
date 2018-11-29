@@ -4,16 +4,16 @@
 #include "client.h"
 #include "../common/global.h"
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 void _socket_start(void) {
     WSACleanup();
 }
 #endif
 
 void socket_start() {
-#ifdef _MSC_VER
+#ifdef _WIN32
     WSADATA wsad;
-    WSAStartup(WINSOCK_VERSION, &wsad);
+    WSAStartup(MAKEWORD(2, 2), &wsad);
     atexit(_socket_start);
 #endif
     IGNORE_SIGPIPE();
@@ -24,7 +24,7 @@ socket_t socket_stream() {
 }
 
 sockaddr_t create_sockaddr(char *ip, int port) {
-#ifdef _MSC_VER
+#ifdef _WIN32
     // Windows create sockaddr
 #else
     sockaddr_t addr;
@@ -36,7 +36,7 @@ sockaddr_t create_sockaddr(char *ip, int port) {
 }
 
 int socket_close(socket_t s) {
-#ifdef _MSC_VER
+#ifdef _WIN32
     return closesocket(s);
 #else
     return close(s);
@@ -44,7 +44,7 @@ int socket_close(socket_t s) {
 }
 
 int socket_set_block(socket_t s) {
-#ifdef _MSC_VER
+#ifdef _WIN32
     u_long mode = 0;
     return ioctlsocket(s, FIONBIO, &mode);
 #else
@@ -58,7 +58,7 @@ int socket_set_block(socket_t s) {
 }
 
 int socket_set_nonblock(socket_t s) {
-#ifdef _MSC_VER
+#ifdef _WIN32
     u_long mode = 1;
     return ioctlsocket(s, FIONBIO, &mode);
 #else

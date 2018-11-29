@@ -9,7 +9,7 @@
 #include "client.h"
 #include "../common/global.h"
 
-struct connection *create_conn(int fd, int type, boolean is_asyn, void *ptr);
+struct connection *create_conn(socket_t fd, int type, boolean is_asyn, void *ptr);
 
 void verify_asyn_conn(fd_list *fl, Array tag);
 
