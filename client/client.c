@@ -11,6 +11,8 @@ fd_list rl, wl, el;
 Array tag;
 int rfd;
 char token[50];
+char rip[30];
+int rport, lport;
 
 void init() {
     rl.li = newArrayDefault(sizeof(struct connection *));
@@ -42,6 +44,9 @@ int handler_2(struct connection *conn);
 int handler_3(struct connection *conn);
 
 int create_tunnel(char *ip, int r_port, int l_port, char *password) {
+    strcpy(rip, ip);
+    rport = r_port;
+    lport = l_port;
     init();
 
     socket_t sock = socket_stream();
@@ -58,12 +63,7 @@ int create_tunnel(char *ip, int r_port, int l_port, char *password) {
         return -1;
     }
 
-    if (socket_set_nonblock(sock) == -1) {
-        perror("Accept make socket non blocking");
-        return -1;
-    }
-
-    struct connection *tunnel = create_conn(sock, C_TUNNEL, null);
+    struct connection *tunnel = create_conn(sock, C_TUNNEL, false, null);
 
     char msg[256];
     sprintf(msg, "%s %s\n", TUNNEL, password);
@@ -79,6 +79,8 @@ int create_tunnel(char *ip, int r_port, int l_port, char *password) {
         for (int i = 0; i < el.num; ++i) {
             tag_close_conn(getArrayForPointer(el.li, i), tag);
         }
+        verify_asyn_conn(&rl, tag);
+        verify_asyn_conn(&wl, tag);
         for (int i = 0; i < rl.num; ++i) {
             struct connection *conn = getArrayForPointer(rl.li, i);
             dist(conn);
@@ -109,7 +111,45 @@ int dist(struct connection *conn) {
     return 0;
 }
 
-void request() {
+int connecto(struct connection *conn, const sockaddr_t *addr) {
+    if (conn->is_asyn) {
+        int r = socket_connect(conn->fd, addr);
+        //非阻塞connect 返回 -1 并且 errno == ECONNECTED 表示正在建立链接
+        if (r == -1 && errno == ECONNECTED) {
+            return 0;
+        } else {
+            return -1;
+        }
+    } else {
+        return socket_connect(conn->fd, addr);
+    }
+}
+
+int request() {
+    socket_t rs = socket_stream();
+    socket_t ls = socket_stream();
+    struct connection *rc = create_conn(rs, C_R_SERVER, true, null);
+    struct connection *lc = create_conn(ls, C_L_SERVER, true, null);
+    struct r_server_conn *rcp = malloc(sizeof(struct r_server_conn));
+    struct l_server_conn *lcp = malloc(sizeof(struct l_server_conn));
+    rcp->l_server_conn = lc;
+    lcp->r_server_conn = rc;
+    rc->ptr = rcp;
+    lc->ptr = lcp;
+
+    sockaddr_t raddr = create_sockaddr(rip, rport);
+    sockaddr_t laddr = create_sockaddr("127.0.0.1", lport);
+
+    if (connecto(rc, &raddr) == -1 || connecto(lc, &laddr) == -1) {
+        close_conn(rc);
+        close_conn(lc);
+        return -1;
+    }
+
+    add_fd_to_rel(rc);
+    add_fd_to_rel(lc);
+    add_fd_to_wl(rc);
+    add_fd_to_wl(lc);
 }
 
 int handler_1(struct connection *conn) {
@@ -139,7 +179,7 @@ int handler_1(struct connection *conn) {
         printf("handler_1 Read the content: %s\n", buf);
 
         char command[30] = "";
-        sscanf(buf, "%s ", command);
+        sscanf(buf, "%s", command);
         if (strcmp(command, SUCCESS) == 0) {
             int a_port;
             sscanf(buf, "success %d %d %s", &rfd, &a_port, token);

@@ -9,7 +9,9 @@
 #include "client.h"
 #include "../common/global.h"
 
-struct connection *create_conn(int fd, int type, void *ptr);
+struct connection *create_conn(int fd, int type, boolean is_asyn, void *ptr);
+
+void verify_asyn_conn(fd_list *fl, Array tag);
 
 void tag_close_conn(struct connection *conn, Array arr);
 

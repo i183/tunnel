@@ -5,15 +5,38 @@
 #include <stdio.h>
 #include <memory.h>
 #include "common.h"
+#include "os.h"
 
-struct connection *create_conn(SOCKET fd, int type, void *ptr) {
+struct connection *create_conn(socket_t fd, int type, boolean is_asyn, void *ptr) {
     struct connection *conn = malloc(sizeof(struct connection));
     conn->fd = fd;
     conn->type = type;
     conn->write_buf = null;
     conn->len = 0;
+    conn->is_asyn = is_asyn;
+    conn->asyn_conn = false;
     conn->ptr = ptr;
+
+    if (is_asyn) {
+        socket_set_nonblock(conn->fd);
+    }
     return conn;
+}
+
+void verify_asyn_conn(fd_list *fl, Array tag) {
+    int optval;
+    socklen_t optlen = sizeof(optval);
+    for (int i = 0; i < fl->num; ++i) {
+        struct connection *conn = getArrayForPointer(fl->li, i);
+        if (!conn->tag_close && conn->is_asyn && !conn->asyn_conn) {
+            if (!getsockopt(conn->fd, SOL_SOCKET, SO_ERROR, &optval, &optlen)) {
+                //一步连接失败，关闭连接
+                tag_close_conn(conn, tag);
+            } else {
+                conn->asyn_conn = true;
+            }
+        }
+    }
 }
 
 void tag_close_conn(struct connection *conn, Array arr) {
@@ -43,7 +66,7 @@ void tag_close_conn(struct connection *conn, Array arr) {
 int close_conn(struct connection *conn) {
     printf("Closed connection, fd: %d  type: %d p:%p\n", conn->fd, conn->type, conn);
 
-    int res = closesocket(conn->fd);
+    int res = socket_close(conn->fd);
     if (conn->ptr) {
         free(conn->ptr);
     }

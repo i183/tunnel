@@ -14,6 +14,8 @@ struct connection {
     void *write_buf; //等待写入的数据
     int len; //等待写入数据的长度
     boolean tag_close; //标记已关闭
+    boolean is_asyn; //是否为异步连接
+    boolean asyn_conn; //异步连接是否成功
     void *ptr; //额外数据指针
 };
 
