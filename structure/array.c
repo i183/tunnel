@@ -81,6 +81,25 @@ void setArray(Array arr, int index, void *item) {
     memcpy(arr->data + index * arr->typeSize, item, arr->typeSize);
 }
 
+int indexOfItemInArray(Array arr, void *item) {
+    for (int i = 0; i < arr->size; i++) {
+        if (memeq(item, arr->data + i * arr->typeSize, arr->typeSize)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+boolean removeArrayByItem(Array arr, void *item) {
+    int i = indexOfItemInArray(arr, item);
+    if (i >= 0) {
+        removeArray(arr, i);
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void removeArray(Array arr, int index) {
     rangeCheck(arr, index);
 

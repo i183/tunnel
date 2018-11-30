@@ -5,6 +5,8 @@
 #ifndef LEARN_C_ARRAY_H
 #define LEARN_C_ARRAY_H
 
+#include "../common/global.h"
+
 #define ARRAY_DEFAULT_CAPACITY 10
 #define ARRAY_EXPAND_INTENSITY 1.6
 
@@ -57,6 +59,22 @@ void insertArray(Array arr, int index, void *item);
  * @param item
  */
 void setArray(Array arr, int index, void *item);
+
+/**
+ * 在Array中item的位置
+ * @param arr
+ * @param item
+ * @return
+ */
+int indexOfItemInArray(Array arr, void *item);
+
+/**
+ * 在Array中是否存在某元素
+ * @param arr
+ * @param item
+ * @return
+ */
+boolean removeArrayByItem(Array arr, void *item);
 
 /**
  * 删除元素

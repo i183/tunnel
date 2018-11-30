@@ -3,6 +3,8 @@
 #include <fcntl.h>
 #include <memory.h>
 
+#include "global.h"
+
 void error(char *s) {
     fprintf(stderr, "Error: %s\n", s);
     exit(EXIT_FAILURE);
@@ -31,4 +33,14 @@ int get_system_type() {
 #else
     return 5;
 #endif
+}
+
+boolean memeq(void *p1, void *p2, int n) {
+    char *c1 = p1, *c2 = p2;
+    for (; n > 0; c1++, c2++, n--) {
+        if (*c1 != *c2)  {
+            return false;
+        }
+    }
+    return true;
 }

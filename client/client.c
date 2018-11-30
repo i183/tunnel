@@ -22,12 +22,27 @@ void init() {
 }
 
 void add_fd_to_rel(struct connection *conn) {
-    addArrayForPointer(rl.li, conn);
-    addArrayForPointer(el.li, conn);
+    if(indexOfItemInArray(rl.li, &conn) == -1) {
+        addArrayForPointer(rl.li, conn);
+    }
+    if(indexOfItemInArray(el.li, &conn) == -1) {
+        addArrayForPointer(el.li, conn);
+    }
 }
 
 void add_fd_to_wl(struct connection *conn) {
-    addArrayForPointer(wl.li, conn);
+    if(indexOfItemInArray(wl.li, &conn) == -1) {
+        addArrayForPointer(wl.li, conn);
+    }
+}
+
+void remove_fd_by_tag() {
+    for (int i = 0; i < tag->size; i++) {
+        struct connection *conn = getArrayForPointer(tag, i);
+        removeArrayByItem(rl.li, &conn);
+        removeArrayByItem(wl.li, &conn);
+        removeArrayByItem(el.li, &conn);
+    }
 }
 
 /**
@@ -92,6 +107,7 @@ int create_tunnel(char *ip, int r_port, int l_port, char *password) {
             dist(conn);
         }
         close_conn_arr(tag);
+        remove_fd_by_tag();
         resetArrayEmpty(tag);
     }
 
@@ -152,6 +168,36 @@ int request() {
     add_fd_to_rel(lc);
     add_fd_to_wl(rc);
     add_fd_to_wl(lc);
+
+    return 0;
+}
+
+int read_write(struct connection *read_conn, struct connection *write_conn) {
+    while (true) {
+        if (write_conn->len > 0) {
+            //存在待写入数据，结束循环
+            break;
+        }
+
+        char buf[READ_BUF_LEN];
+        ssize_t len = read(read_conn->fd, buf, READ_BUF_LEN);
+        printf("read_write_local len: %ld\n", len);
+        if (len == -1) {
+            if (EAGAIN != errno) {
+                perror("Read data");
+                return -1;
+            }
+            break;
+        } else if (len == 0) {
+            return -1;
+        }
+
+        int flag = write_data(write_conn, buf, len);
+        if (flag == -1) {
+            return -1;
+        }
+    }
+    return 0;
 }
 
 int handler_1(struct connection *conn) {
@@ -188,6 +234,7 @@ int handler_1(struct connection *conn) {
             printf("success fd: %d, port: %d, token: %s\n", rfd, a_port, token);
         } else if (strcmp(command, REQUEST) == 0) {
             printf("REQUEST command\n");
+            request();
         } else {
             done = true;
             printf("Unknown command: %s\n", command);
@@ -202,6 +249,8 @@ int handler_1(struct connection *conn) {
 }
 
 int handler_2(struct connection *conn) {
+
+    struct connection *lc = ((struct r_server_conn *) conn->ptr)->l_server_conn;
     return 0;
 }
 

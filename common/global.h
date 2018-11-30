@@ -40,4 +40,13 @@ void line_to_zero(char *s);
  */
 int get_system_type();
 
+/**
+ * 比较一段内存存储的数据是否相同
+ * @param p1
+ * @param p2
+ * @param n 内存段字节数
+ * @return
+ */
+boolean memeq(void *p1, void *p2, int n);
+
 #endif //LEARN_C_COMMON_H
