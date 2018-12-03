@@ -19,6 +19,10 @@ int close_conn(struct connection *conn);
 
 void close_conn_arr(Array arr);
 
+int wait_data(struct connection *conn, const void *buf, size_t len);
+
 int write_data(struct connection *conn, const void *buf, size_t len);
+
+int handler_write(struct connection *conn);
 
 #endif //TUNNEL_COMMON_H

@@ -36,6 +36,15 @@ void add_fd_to_wl(struct connection *conn) {
     }
 }
 
+void remove_rel_by_conn(struct connection *conn) {
+    removeArrayByItem(rl.li, &conn);
+    removeArrayByItem(el.li, &conn);
+}
+
+void remove_wl_by_conn(struct connection *conn) {
+    removeArrayByItem(wl.li, &conn);
+}
+
 void remove_fd_by_tag() {
     for (int i = 0; i < tag->size; i++) {
         struct connection *conn = getArrayForPointer(tag, i);
@@ -46,11 +55,18 @@ void remove_fd_by_tag() {
 }
 
 /**
- * 事件分发
+ * 读取事件分发
  * @param conn
  * @return
  */
-int dist(struct connection *conn);
+int dist_read(struct connection *conn);
+
+/**
+ * 写入事件分发
+ * @param conn
+ * @return
+ */
+int dist_write(struct connection *conn);
 
 int handler_1(struct connection *conn);
 
@@ -80,7 +96,8 @@ int create_tunnel(char *ip, int r_port, int l_port, char *password) {
         return -1;
     }
 
-    struct connection *tunnel = create_conn(sock, C_TUNNEL, false, null);
+    struct connection *tunnel = create_conn(sock, C_TUNNEL, true, null);
+    tunnel->asyn_conn = true;
 
     char msg[256];
     sprintf(msg, "%s %s\n", TUNNEL, password);
@@ -94,17 +111,22 @@ int create_tunnel(char *ip, int r_port, int l_port, char *password) {
         int count = select_os(&rl, &wl, &el, -1);
         printf("count: %d\n", count);
         for (int i = 0; i < el.num; ++i) {
-            tag_close_conn(getArrayForPointer(el.li, i), tag);
+            struct connection *conn = getArrayForPointer(el.li, i);
+            if (conn->type == C_TUNNEL) {
+                error("Tunnel connection is exception");
+                return -1;
+            }
+            tag_close_conn(conn, tag);
         }
         verify_asyn_conn(&rl, tag);
         verify_asyn_conn(&wl, tag);
         for (int i = 0; i < rl.num; ++i) {
             struct connection *conn = getArrayForPointer(rl.li, i);
-            dist(conn);
+            dist_read(conn);
         }
         for (int i = 0; i < wl.num; ++i) {
             struct connection *conn = getArrayForPointer(wl.li, i);
-            dist(conn);
+            dist_write(conn);
         }
         close_conn_arr(tag);
         remove_fd_by_tag();
@@ -114,17 +136,39 @@ int create_tunnel(char *ip, int r_port, int l_port, char *password) {
     return 0;
 }
 
-int dist(struct connection *conn) {
+int dist_read(struct connection *conn) {
     if (conn->tag_close == true) {
-        return 1;
+        return -1;
     }
 
-    if (conn->type == 1) {
+    if (conn->type == C_TUNNEL) {
         handler_1(conn);
-    } else if (conn->type == 2) {
+    } else if (conn->type == C_R_SERVER) {
         handler_2(conn);
-    } else if (conn->type == 3) {
+    } else if (conn->type == C_L_SERVER) {
         handler_3(conn);
+    }
+    return 0;
+}
+
+int dist_write(struct connection *conn) {
+    if (conn->tag_close == true) {
+        return -1;
+    }
+
+    int r = handler_write(conn);
+    remove_wl_by_conn(conn);
+    if (r == -1) {
+        tag_close_conn(conn, tag);
+        return -1;
+    }
+
+    if (conn->type == C_R_SERVER) {
+        struct r_server_conn *rs = conn->ptr;
+        handler_3(rs->l_server_conn);
+    } else if (conn->type == C_L_SERVER) {
+        struct l_server_conn *ls = conn->ptr;
+        handler_2(ls->r_server_conn);
     }
     return 0;
 }
@@ -164,6 +208,11 @@ int request() {
         return -1;
     }
 
+    //发送拉请求（由于是异步连接，先写入待写数据区，连接成功后写入）
+    char msg[256];
+    sprintf(msg, "%s %d %s\n", PULL, rfd, token);
+    wait_data(rc, msg, strlen(msg));
+
     add_fd_to_rel(rc);
     add_fd_to_rel(lc);
     add_fd_to_wl(rc);
@@ -181,10 +230,10 @@ int read_write(struct connection *read_conn, struct connection *write_conn) {
 
         char buf[READ_BUF_LEN];
         ssize_t len = read(read_conn->fd, buf, READ_BUF_LEN);
-        printf("read_write_local len: %ld\n", len);
+        printf("read_write len: %ld\n", len);
         if (len == -1) {
             if (EAGAIN != errno) {
-                perror("Read data");
+                perror("read_write Read data");
                 return -1;
             }
             break;
@@ -213,7 +262,7 @@ int handler_1(struct connection *conn) {
         printf("handler_1 len: %ld\n", len);
         if (len == -1) {
             if (EAGAIN != errno) {
-                perror("Read data");
+                perror("handler_1 Read data");
                 done = true;
             }
             break;
@@ -231,7 +280,7 @@ int handler_1(struct connection *conn) {
         if (strcmp(command, SUCCESS) == 0) {
             int a_port;
             sscanf(buf, "success %d %d %s", &rfd, &a_port, token);
-            printf("success fd: %d, port: %d, token: %s\n", rfd, a_port, token);
+            printf("success fd: %d, port: %d, token: %s address: %s:%d\n", rfd, a_port, token, rip, a_port);
         } else if (strcmp(command, REQUEST) == 0) {
             printf("REQUEST command\n");
             request();
@@ -249,11 +298,19 @@ int handler_1(struct connection *conn) {
 }
 
 int handler_2(struct connection *conn) {
-
     struct connection *lc = ((struct r_server_conn *) conn->ptr)->l_server_conn;
-    return 0;
+    int r = read_write(conn, lc);
+    if (r == -1) {
+        tag_close_conn(conn, tag);
+    }
+    return r;
 }
 
 int handler_3(struct connection *conn) {
-    return 0;
+    struct connection *rc = ((struct l_server_conn *) conn->ptr)->r_server_conn;
+    int r = read_write(conn, rc);
+    if (r == -1) {
+        tag_close_conn(conn, tag);
+    }
+    return r;
 }
