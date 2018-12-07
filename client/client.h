@@ -20,6 +20,14 @@ struct connection {
 };
 
 /**
+ * 通道连接
+ */
+struct c_tunnel_conn {
+    char cmd_buf[1024 * 2];
+    int cmd_buf_len;
+};
+
+/**
  * 远程服务器连接
  */
 struct r_server_conn {

@@ -22,35 +22,44 @@ void init() {
 }
 
 void add_fd_to_rel(struct connection *conn) {
-    if(indexOfItemInArray(rl.li, &conn) == -1) {
+    if (indexOfItemInArray(rl.li, &conn) == -1) {
         addArrayForPointer(rl.li, conn);
     }
-    if(indexOfItemInArray(el.li, &conn) == -1) {
+    if (indexOfItemInArray(el.li, &conn) == -1) {
         addArrayForPointer(el.li, conn);
     }
 }
 
 void add_fd_to_wl(struct connection *conn) {
-    if(indexOfItemInArray(wl.li, &conn) == -1) {
+    if (indexOfItemInArray(wl.li, &conn) == -1) {
         addArrayForPointer(wl.li, conn);
     }
 }
 
 void remove_rel_by_conn(struct connection *conn) {
-    removeArrayByItem(rl.li, &conn);
-    removeArrayByItem(el.li, &conn);
+    int i1 = removeArrayByItem(rl.li, &conn);
+    if (i1 >= 0 && i1 < rl.num) {
+        rl.num--;
+    }
+
+    int i2 = removeArrayByItem(el.li, &conn);
+    if (i2 >= 0 && i2 < el.num) {
+        el.num--;
+    }
 }
 
 void remove_wl_by_conn(struct connection *conn) {
-    removeArrayByItem(wl.li, &conn);
+    int i = removeArrayByItem(wl.li, &conn);
+    if (i >= 0 && i < wl.num) {
+        wl.num--;
+    }
 }
 
 void remove_fd_by_tag() {
     for (int i = 0; i < tag->size; i++) {
         struct connection *conn = getArrayForPointer(tag, i);
-        removeArrayByItem(rl.li, &conn);
-        removeArrayByItem(wl.li, &conn);
-        removeArrayByItem(el.li, &conn);
+        remove_rel_by_conn(conn);
+        remove_wl_by_conn(conn);
     }
 }
 
@@ -96,7 +105,10 @@ int create_tunnel(char *ip, int r_port, int l_port, char *password) {
         return -1;
     }
 
-    struct connection *tunnel = create_conn(sock, C_TUNNEL, true, null);
+    struct c_tunnel_conn *tc = malloc(sizeof(struct c_tunnel_conn));
+    tc->cmd_buf[0] = 0;
+    tc->cmd_buf_len = 0;
+    struct connection *tunnel = create_conn(sock, C_TUNNEL, true, tc);
     tunnel->asyn_conn = true;
 
     char msg[256];
@@ -109,7 +121,7 @@ int create_tunnel(char *ip, int r_port, int l_port, char *password) {
 
     while (true) {
         int count = select_os(&rl, &wl, &el, -1);
-        printf("count: %d\n", count);
+        //printf("count: %d\n", count);
         for (int i = 0; i < el.num; ++i) {
             struct connection *conn = getArrayForPointer(el.li, i);
             if (conn->type == C_TUNNEL) {
@@ -157,7 +169,9 @@ int dist_write(struct connection *conn) {
     }
 
     int r = handler_write(conn);
-    remove_wl_by_conn(conn);
+    if (r != 1) {
+        remove_wl_by_conn(conn);
+    }
     if (r == -1) {
         tag_close_conn(conn, tag);
         return -1;
@@ -213,6 +227,7 @@ int request() {
     sprintf(msg, "%s %d %s\n", PULL, rfd, token);
     wait_data(rc, msg, strlen(msg));
 
+    printf("-------send pull\n");
     add_fd_to_rel(rc);
     add_fd_to_rel(lc);
     add_fd_to_wl(rc);
@@ -230,7 +245,6 @@ int read_write(struct connection *read_conn, struct connection *write_conn) {
 
         char buf[READ_BUF_LEN];
         ssize_t len = read(read_conn->fd, buf, READ_BUF_LEN);
-        printf("read_write len: %ld\n", len);
         if (len == -1) {
             if (EAGAIN != errno) {
                 perror("read_write Read data");
@@ -242,11 +256,38 @@ int read_write(struct connection *read_conn, struct connection *write_conn) {
         }
 
         int flag = write_data(write_conn, buf, len);
+
+        if (len > 1 && buf[len - 1] == -126 && buf[len - 2] == 96) {
+            printf("-126 %d\n", buf[len - 2]);
+        }
         if (flag == -1) {
             return -1;
+        } else if (flag == 1) {
+            add_fd_to_wl(write_conn);
         }
     }
     return 0;
+}
+
+void set_cmd_buf(struct c_tunnel_conn *tc, char *buf) {
+    strcat(tc->cmd_buf, buf);
+}
+
+boolean get_cmd(struct c_tunnel_conn *tc, char *line) {
+    char *p = strchr(tc->cmd_buf, '\n');
+    if (p) {
+        unsigned long index = p - tc->cmd_buf;
+        memcpy(line, tc->cmd_buf, index + 1);
+        line[index] = 0;
+
+        size_t len = strlen(tc->cmd_buf);
+        for (int i = (int) index + 1; i < len; i++) {
+            tc->cmd_buf[i - index - 1] = tc->cmd_buf[i];
+        }
+        tc->cmd_buf[len - index - 1] = 0;
+        return true;
+    }
+    return false;
 }
 
 int handler_1(struct connection *conn) {
@@ -272,22 +313,29 @@ int handler_1(struct connection *conn) {
         }
         buf[len] = 0;
 
-        line_to_zero(buf);
+        struct c_tunnel_conn *tc = conn->ptr;
+        strcat(tc->cmd_buf, buf);
+
         printf("handler_1 Read the content: %s\n", buf);
 
-        char command[30] = "";
-        sscanf(buf, "%s", command);
-        if (strcmp(command, SUCCESS) == 0) {
-            int a_port;
-            sscanf(buf, "success %d %d %s", &rfd, &a_port, token);
-            printf("success fd: %d, port: %d, token: %s address: %s:%d\n", rfd, a_port, token, rip, a_port);
-        } else if (strcmp(command, REQUEST) == 0) {
-            printf("REQUEST command\n");
-            request();
-        } else {
-            done = true;
-            printf("Unknown command: %s\n", command);
-            break;
+        char line[256];
+        boolean gc = get_cmd(tc, line);
+        while (gc) {
+            char command[30] = "";
+            sscanf(line, "%s", command);
+            if (strcmp(command, SUCCESS) == 0) {
+                int a_port;
+                sscanf(line, "success %d %d %s", &rfd, &a_port, token);
+                printf("success fd: %d, port: %d, token: %s address: %s:%d\n", rfd, a_port, token, rip, a_port);
+            } else if (strcmp(command, REQUEST) == 0) {
+                printf("REQUEST command\n");
+                request();
+            } else {
+                done = true;
+                printf("Unknown command: %s\n", command);
+                break;
+            }
+            gc = get_cmd(tc, line);
         }
     }
 

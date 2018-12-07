@@ -74,7 +74,7 @@ int indexOfItemInArray(Array arr, void *item);
  * @param item
  * @return
  */
-boolean removeArrayByItem(Array arr, void *item);
+int removeArrayByItem(Array arr, void *item);
 
 /**
  * 删除元素

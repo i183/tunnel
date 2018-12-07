@@ -72,7 +72,7 @@ int start(int port, char *password) {
     while (true) {
         // 等待事件
         int wait_count = epoll_wait(epfd, event, MAX_EVENT, -1);
-        printf("wait_count: %d\n", wait_count);
+        //printf("wait_count: %d\n", wait_count);
 
         for (int i = 0; i < wait_count; i++) {
             struct epoll_event e = event[i];
@@ -137,10 +137,14 @@ int handler_write(const struct epoll_event *e) {
         //写入数据时出错或连接关闭
         perror("write");
         return -1;
+    } else if (len == -1) {
+        printf("len == -1\n");
+        return 1;
     } else if (len > 0) {
         //写入数据成功
         //删除待写数据
         free(conn->write_buf);
+        conn->cc += conn->len;
         conn->len = 0;
     }
     return 0;
@@ -161,7 +165,6 @@ int read_write_client(struct connection *conn) {
 
         char buf[READ_BUF_LEN];
         ssize_t len = read(conn->fd, buf, READ_BUF_LEN);
-        printf("read_write_client len: %ld\n", len);
         if (len == -1) {
             if (EAGAIN != errno) {
                 perror("Read data");
@@ -171,8 +174,12 @@ int read_write_client(struct connection *conn) {
         } else if (len == 0) {
             return -1;
         }
+        //make_socket_block(conn->fd);
+        //make_socket_block(uc->fd);
 
         int flag = write_data(uc, buf, len);
+        //make_socket_non_blocking(uc->fd);
+        //printf("rw: %d cc: %d\n", (int) buf[len - 1], uc->cc);
         if (flag == -1) {
             return -1;
         }
@@ -194,9 +201,8 @@ int read_write_user(struct connection *conn) {
             break;
         }
 
-        char buf[READ_BUF_LEN];
+        char buf[READ_BUF_LEN + 1];
         ssize_t len = read(conn->fd, buf, READ_BUF_LEN);
-        printf("read_write_user len: %ld\n", len);
         if (len == -1) {
             if (EAGAIN != errno) {
                 perror("Read data");
@@ -207,6 +213,8 @@ int read_write_user(struct connection *conn) {
             return -1;
         }
 
+        buf[len] = 0;
+        printf("ccc: %s\n", buf);
         int flag = write_data(cc, buf, len);
         if (flag == -1) {
             return -1;
@@ -279,6 +287,7 @@ int handler_2(int epfd, const struct epoll_event *e) {
 
         char msg[20];
         sprintf(msg, "%s\n", REQUEST);
+        printf("------send request\n");
         int flag = write_data(lu->tunnel_conn, msg, strlen(msg)); //通知客户端有新的请求
         if (flag == -1) {
             tag_close_conn(conn, tag);
@@ -335,6 +344,7 @@ int handler_3(int epfd, const struct epoll_event *e) {
             break;
         } else if (strcmp(command, PULL) == 0) {
             //处理pull命令
+            printf("++++++++receive pull\n");
             if (pull_cmd(epfd, conn, buf) == -1) {
                 done = true;
                 break;
@@ -395,7 +405,7 @@ int handler_4(int epfd, const struct epoll_event *e) {
  * @return
  */
 int handler_5(int epfd, const struct epoll_event *e) {
-    printf("h5\n");
+    //printf("h5\n");
     struct connection *conn = (struct connection *) e->data.ptr;
     struct connection *uc = ((struct client_conn *) conn->ptr)->user_conn;
 
@@ -421,7 +431,7 @@ int handler_5(int epfd, const struct epoll_event *e) {
  * @return
  */
 int handler_6(int epfd, const struct epoll_event *e) {
-    printf("h6\n");
+    //printf("h6\n");
     struct connection *conn = (struct connection *) e->data.ptr;
     struct connection *cc = ((struct user_conn *) conn->ptr)->client_conn;
 

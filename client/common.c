@@ -148,6 +148,9 @@ int handler_write(struct connection *conn) {
         //写入数据时出错或连接关闭
         perror("write");
         return -1;
+    } else if (len == -1) {
+        printf("len == -1\n");
+        return 1;
     } else if (len > 0) {
         //写入数据成功
         //删除待写数据

@@ -90,14 +90,13 @@ int indexOfItemInArray(Array arr, void *item) {
     return -1;
 }
 
-boolean removeArrayByItem(Array arr, void *item) {
+int removeArrayByItem(Array arr, void *item) {
     int i = indexOfItemInArray(arr, item);
     if (i >= 0) {
         removeArray(arr, i);
-        return true;
-    } else {
-        return false;
+        return i;
     }
+    return i;
 }
 
 void removeArray(Array arr, int index) {

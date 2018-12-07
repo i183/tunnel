@@ -15,4 +15,6 @@ int write_data(struct connection *conn, const void *buf, size_t len);
 
 int make_socket_non_blocking(int fd);
 
+int make_socket_block(int fd);
+
 #endif //TUNNEL_COMMON_H
