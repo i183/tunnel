@@ -144,7 +144,6 @@ int handler_write(const struct epoll_event *e) {
         //写入数据成功
         //删除待写数据
         free(conn->write_buf);
-        conn->cc += conn->len;
         conn->len = 0;
     }
     return 0;
@@ -174,12 +173,8 @@ int read_write_client(struct connection *conn) {
         } else if (len == 0) {
             return -1;
         }
-        //make_socket_block(conn->fd);
-        //make_socket_block(uc->fd);
 
         int flag = write_data(uc, buf, len);
-        //make_socket_non_blocking(uc->fd);
-        //printf("rw: %d cc: %d\n", (int) buf[len - 1], uc->cc);
         if (flag == -1) {
             return -1;
         }
@@ -213,8 +208,6 @@ int read_write_user(struct connection *conn) {
             return -1;
         }
 
-        buf[len] = 0;
-        printf("ccc: %s\n", buf);
         int flag = write_data(cc, buf, len);
         if (flag == -1) {
             return -1;

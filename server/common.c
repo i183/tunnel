@@ -15,7 +15,6 @@ struct connection *create_conn(int fd, int type, void *ptr) {
     conn->write_buf = null;
     conn->len = 0;
     conn->tag_close = false;
-    conn->cc = 0;
     conn->ptr = ptr;
     return conn;
 }
@@ -113,7 +112,6 @@ int write_data(struct connection *conn, const void *buf, size_t len) {
         conn->len = len - res;
         return 1;
     }
-    conn->cc += len;
     return 0;
 }
 

@@ -23,7 +23,6 @@ struct connection {
     size_t len; //等待写入数据的长度
     boolean tag_close; //标记已关闭
     void *ptr; //额外数据指针
-    int cc;
 };
 
 struct listen_user {
