@@ -20,15 +20,19 @@ void socket_start() {
 }
 
 socket_t socket_stream() {
-    return socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    return socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 }
 
 sockaddr_t create_sockaddr(char *ip, int port) {
 #ifdef _WIN32
-    // Windows create sockaddr
+    sockaddr_t addr;
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    addr.sin_addr.s_addr = inet_addr(ip);
+    return addr;
 #else
     sockaddr_t addr;
-    addr.sin_family = PF_INET;
+    addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = inet_addr(ip);
     return addr;
@@ -73,6 +77,14 @@ int socket_set_nonblock(socket_t s) {
 
 int socket_connect(socket_t s, const sockaddr_t *addr) {
     return connect(s, (const struct sockaddr *) addr, sizeof(*addr));
+}
+
+boolean net_error() {
+#ifdef _WIN32
+    return WSAGetLastError() != WSAEWOULDBLOCK;
+#else
+    return EAGAIN != errno;
+#endif
 }
 
 int socket_addr(const char *ip, uint16_t port, sockaddr_t *addr) {
@@ -142,7 +154,7 @@ void fd_list_to_fd_set(fd_list *fl, fd_set *fs) {
     }
 }
 
-int select_linux(fd_list *rl, fd_list *wl, fd_list *el, int timeout_ms) {
+int select_os(fd_list *rl, fd_list *wl, fd_list *el, int timeout_ms) {
     int max_fd = get_max_fd(rl), temp;
     if ((temp = get_max_fd(wl)) > max_fd) {
         max_fd = temp;
@@ -173,8 +185,4 @@ int select_linux(fd_list *rl, fd_list *wl, fd_list *el, int timeout_ms) {
         fd_set_to_fd_list(el, &es);
     }
     return result;
-}
-
-int select_os(fd_list *rl, fd_list *wl, fd_list *el, int timeout_ms) {
-    return select_linux(rl, wl, el, timeout_ms);
 }

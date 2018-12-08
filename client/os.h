@@ -70,6 +70,8 @@ int socket_set_nonblock(socket_t s);
 
 int socket_connect(socket_t s, const sockaddr_t *addr);
 
+boolean net_error();
+
 int socket_addr(const char *ip, uint16_t port, sockaddr_t *addr);
 
 typedef struct {

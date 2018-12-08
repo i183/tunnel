@@ -149,7 +149,7 @@ int create_tunnel(char *ip, int r_port, int l_port, char *password) {
 }
 
 int dist_read(struct connection *conn) {
-    if (conn->tag_close == true) {
+    if (conn->tag_close == true && conn->asyn_conn == true) {
         return -1;
     }
 
@@ -164,7 +164,7 @@ int dist_read(struct connection *conn) {
 }
 
 int dist_write(struct connection *conn) {
-    if (conn->tag_close == true) {
+    if (conn->tag_close == true && conn->asyn_conn == true) {
         return -1;
     }
 
@@ -244,9 +244,9 @@ int read_write(struct connection *read_conn, struct connection *write_conn) {
         }
 
         char buf[READ_BUF_LEN];
-        ssize_t len = read(read_conn->fd, buf, READ_BUF_LEN);
+        ssize_t len = recv(read_conn->fd, buf, READ_BUF_LEN, 0);
         if (len == -1) {
-            if (EAGAIN != errno) {
+            if (net_error()) {
                 perror("read_write Read data");
                 return -1;
             }
@@ -256,10 +256,6 @@ int read_write(struct connection *read_conn, struct connection *write_conn) {
         }
 
         int flag = write_data(write_conn, buf, len);
-
-        if (len > 1 && buf[len - 1] == -126 && buf[len - 2] == 96) {
-            printf("-126 %d\n", buf[len - 2]);
-        }
         if (flag == -1) {
             return -1;
         } else if (flag == 1) {
@@ -299,10 +295,9 @@ int handler_1(struct connection *conn) {
         }
 
         char buf[READ_BUF_LEN];
-        ssize_t len = read(conn->fd, buf, READ_BUF_LEN);
-        printf("handler_1 len: %ld\n", len);
+        ssize_t len = recv(conn->fd, buf, READ_BUF_LEN, 0);
         if (len == -1) {
-            if (EAGAIN != errno) {
+            if (net_error()) {
                 perror("handler_1 Read data");
                 done = true;
             }
@@ -316,8 +311,6 @@ int handler_1(struct connection *conn) {
         struct c_tunnel_conn *tc = conn->ptr;
         strcat(tc->cmd_buf, buf);
 
-        printf("handler_1 Read the content: %s\n", buf);
-
         char line[256];
         boolean gc = get_cmd(tc, line);
         while (gc) {
@@ -328,7 +321,7 @@ int handler_1(struct connection *conn) {
                 sscanf(line, "success %d %d %s", &rfd, &a_port, token);
                 printf("success fd: %d, port: %d, token: %s address: %s:%d\n", rfd, a_port, token, rip, a_port);
             } else if (strcmp(command, REQUEST) == 0) {
-                printf("REQUEST command\n");
+                printf("request command\n");
                 request();
             } else {
                 done = true;
@@ -347,6 +340,9 @@ int handler_1(struct connection *conn) {
 
 int handler_2(struct connection *conn) {
     struct connection *lc = ((struct r_server_conn *) conn->ptr)->l_server_conn;
+    if (conn->asyn_conn != true || lc->asyn_conn != true) {
+        return 1;
+    }
     int r = read_write(conn, lc);
     if (r == -1) {
         tag_close_conn(conn, tag);
@@ -356,6 +352,9 @@ int handler_2(struct connection *conn) {
 
 int handler_3(struct connection *conn) {
     struct connection *rc = ((struct l_server_conn *) conn->ptr)->r_server_conn;
+    if (conn->asyn_conn != true || rc->asyn_conn != true) {
+        return 1;
+    }
     int r = read_write(conn, rc);
     if (r == -1) {
         tag_close_conn(conn, tag);
