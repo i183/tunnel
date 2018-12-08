@@ -36,7 +36,6 @@ void verify_asyn_conn(fd_list *fl, Array tag) {
             } else {
                 conn->asyn_conn = true;
                 handler_write(conn);
-                printf("oooooooooooooooooooo %d\n", (int)conn->type);
             }
         }
     }
