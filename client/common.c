@@ -48,7 +48,7 @@ void tag_close_conn(struct connection *conn, Array arr) {
 
     conn->tag_close = true;
     addArrayForPointer(arr, conn);
-    printf("Tag close connection, fd: %d  type: %d\n", conn->fd, conn->type);
+    //printf("Tag close connection, fd: %d  type: %d\n", conn->fd, conn->type);
     if (conn->type == C_TUNNEL) {
         error("The main socket closed");
         exit(1);
@@ -66,7 +66,7 @@ void tag_close_conn(struct connection *conn, Array arr) {
 }
 
 int close_conn(struct connection *conn) {
-    printf("Closed connection, fd: %d  type: %d p:%p\n", conn->fd, conn->type, conn);
+    //printf("Closed connection, fd: %d  type: %d p:%p\n", conn->fd, conn->type, conn);
 
     int res = socket_close(conn->fd);
     if (conn->ptr) {

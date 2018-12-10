@@ -4,11 +4,14 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <memory.h>
+#include <time.h>
 #include "tunnel.h"
 #include "server.h"
 #include "common.h"
 #include "listener.h"
 #include "../common/command.h"
+
+#define TOKEN_LEN 30
 
 struct entity {
     int fd;
@@ -80,6 +83,27 @@ boolean remove_tunnel(int fd) {
     return false;
 }
 
+char *gen_token() {
+    char *str = malloc(TOKEN_LEN + 1);
+    srand(time(NULL));//通过时间函数设置随机数种子，使得每次运行结果随机。
+    for (int i = 0; i < TOKEN_LEN; i++) {
+        int flag = rand() % 3;
+        switch (flag) {
+            case 0:
+                str[i] = rand() % 26 + 'a';
+                break;
+            case 1:
+                str[i] = rand() % 26 + 'A';
+                break;
+            case 2:
+                str[i] = rand() % 10 + '0';
+                break;
+        }
+    }
+    str[TOKEN_LEN] = 0;
+    return str;
+}
+
 int create_tunnel(int epfd, struct connection *conn) {
     int listenfd = create_listener(0, 200, false, true);
     if (listenfd == -1) {
@@ -100,7 +124,7 @@ int create_tunnel(int epfd, struct connection *conn) {
 
     struct tunnel *t = malloc(sizeof(struct tunnel));
     t->listen_user_conn = listen_user_conn;
-    t->token = "0101"; // TODO 生成Token
+    t->token = gen_token();
 
     conn->type = S_TUNNEL; //更改类型为隧道
     conn->ptr = t;

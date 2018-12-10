@@ -10,7 +10,6 @@
 int tunnel_cmd(int epfd, struct connection *conn, const char *cmd, const char *pw) {
     char password[50] = "";
     sscanf(cmd, "tunnel %s", password);
-    printf("cmd: %s, pw: %s\n", cmd, password);
     if (strcmp(password, pw)) {
         //密码错误
         char msg[256];
@@ -26,7 +25,6 @@ int tunnel_cmd(int epfd, struct connection *conn, const char *cmd, const char *p
 }
 
 int pull_cmd(int epfd, struct connection *conn, const char *cmd) {
-    printf("pull\n");
     int fd = -1;
     char token[50] = "";
     sscanf(cmd, "pull %d %s", &fd, token);

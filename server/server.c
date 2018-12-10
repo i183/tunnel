@@ -137,7 +137,6 @@ int handler_write(const struct epoll_event *e) {
         perror("write");
         return -1;
     } else if (len == -1) {
-        printf("len == -1\n");
         return 1;
     } else if (len > 0) {
         //写入数据成功
@@ -229,7 +228,7 @@ int handler_1(int epfd, const struct epoll_event *e) {
             break;
         }
 
-        printf("Accept client IP:%s, Port:%d\n", inet_ntoa(in_addr.sin_addr), ntohs(in_addr.sin_port));
+        //printf("Accept client IP:%s, Port:%d\n", inet_ntoa(in_addr.sin_addr), ntohs(in_addr.sin_port));
 
         if (make_socket_non_blocking(accp_fd) == -1) {
             perror("Accept make socket non blocking");
@@ -256,7 +255,6 @@ int handler_1(int epfd, const struct epoll_event *e) {
  * @return
  */
 int handler_2(int epfd, const struct epoll_event *e) {
-    printf("h2\n");
     struct connection *conn = (struct connection *) e->data.ptr;
     while (true) {
         struct sockaddr_in in_addr = {0};
@@ -266,7 +264,7 @@ int handler_2(int epfd, const struct epoll_event *e) {
             break;
         }
 
-        printf("Accept user IP:%s, Port:%d\n", inet_ntoa(in_addr.sin_addr), ntohs(in_addr.sin_port));
+        //printf("Accept user IP:%s, Port:%d\n", inet_ntoa(in_addr.sin_addr), ntohs(in_addr.sin_port));
 
         if (make_socket_non_blocking(accp_fd) == -1) {
             perror("Accept make socket non blocking");
@@ -279,7 +277,7 @@ int handler_2(int epfd, const struct epoll_event *e) {
 
         char msg[20];
         sprintf(msg, "%s\n", REQUEST);
-        printf("------send request\n");
+        printf("Send request\n");
         int flag = write_data(lu->tunnel_conn, msg, strlen(msg)); //通知客户端有新的请求
         if (flag == -1) {
             tag_close_conn(conn, tag);
@@ -295,7 +293,6 @@ int handler_2(int epfd, const struct epoll_event *e) {
  * @return
  */
 int handler_3(int epfd, const struct epoll_event *e) {
-    printf("h3\n");
     struct connection *conn = (struct connection *) e->data.ptr;
     boolean done = false;
     while (true) {
@@ -306,7 +303,6 @@ int handler_3(int epfd, const struct epoll_event *e) {
 
         char buf[READ_BUF_LEN];
         ssize_t len = read(conn->fd, buf, READ_BUF_LEN);
-        printf("handler_3 len: %ld\n", len);
         if (len == -1) {
             if (EAGAIN != errno) {
                 perror("Read data");
@@ -320,7 +316,7 @@ int handler_3(int epfd, const struct epoll_event *e) {
         buf[len] = 0;
 
         line_to_zero(buf);
-        printf("handler_3 Read the content: %s\n", buf);
+        //printf("handler_3 Read the content: %s\n", buf);
 
         char command[30] = "";
         sscanf(buf, "%s ", command);
@@ -359,7 +355,6 @@ int handler_3(int epfd, const struct epoll_event *e) {
  * @return
  */
 int handler_4(int epfd, const struct epoll_event *e) {
-    printf("h4\n");
     struct connection *conn = (struct connection *) e->data.ptr;
     boolean done = false;
     while (true) {
@@ -395,7 +390,6 @@ int handler_4(int epfd, const struct epoll_event *e) {
  * @return
  */
 int handler_5(int epfd, const struct epoll_event *e) {
-    //printf("h5\n");
     struct connection *conn = (struct connection *) e->data.ptr;
     struct connection *uc = ((struct client_conn *) conn->ptr)->user_conn;
 
@@ -421,7 +415,6 @@ int handler_5(int epfd, const struct epoll_event *e) {
  * @return
  */
 int handler_6(int epfd, const struct epoll_event *e) {
-    //printf("h6\n");
     struct connection *conn = (struct connection *) e->data.ptr;
     struct connection *cc = ((struct user_conn *) conn->ptr)->client_conn;
 

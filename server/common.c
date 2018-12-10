@@ -26,7 +26,7 @@ void tag_close_conn(struct connection *conn, Array arr) {
 
     conn->tag_close = true;
     addArrayForPointer(arr, conn);
-    printf("Tag close connection, fd: %d  type: %d\n", conn->fd, conn->type);
+    //printf("Tag close connection, fd: %d  type: %d\n", conn->fd, conn->type);
     if (conn->type == S_LISTEN_CLIENT) {
         error("The main socket closed");
         exit(1);
@@ -61,17 +61,19 @@ void tag_close_conn(struct connection *conn, Array arr) {
 }
 
 int close_conn(struct connection *conn) {
-    printf("Closed connection, fd: %d  type: %d p:%p\n", conn->fd, conn->type, conn);
+    //printf("Closed connection, fd: %d  type: %d p:%p\n", conn->fd, conn->type, conn);
     if (conn->type == S_TUNNEL) {
         remove_tunnel(conn->fd);
+        struct tunnel *t = conn->ptr;
+        if (t->token) {
+            free(t->token);
+        }
     }
     int res = close(conn->fd);
     if (conn->ptr) {
-        printf("DP %p\n", conn->ptr);
         free(conn->ptr);
     }
     if (conn->write_buf && conn->len > 0) {
-        printf("DW %p\n", conn->write_buf);
         free(conn->write_buf);
     }
     free(conn);

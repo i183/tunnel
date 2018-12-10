@@ -263,7 +263,7 @@ int request() {
     sprintf(msg, "%s %d %s\n", PULL, rfd, token);
     wait_data(rc, msg, strlen(msg));
 
-    printf("-------send pull\n");
+    //printf("Send pull\n");
     add_fd_to_rel(rc);
     add_fd_to_rel(lc);
     add_fd_to_wl(rc);
@@ -355,9 +355,9 @@ int handler_1(struct connection *conn) {
             if (strcmp(command, SUCCESS) == 0) {
                 int a_port;
                 sscanf(line, "success %d %d %s", &rfd, &a_port, token);
-                printf("success fd: %d, port: %d, token: %s address: %s:%d\n", rfd, a_port, token, rip, a_port);
+                printf("Successfully connected, address: %s:%d\n", rip, a_port);
             } else if (strcmp(command, REQUEST) == 0) {
-                printf("request command\n");
+                //printf("request command\n");
                 request();
             } else {
                 done = true;
