@@ -5,6 +5,7 @@
 #define PULL "pull"
 #define SUCCESS "success"
 #define REQUEST "request"
+#define ALIVE "alive"
 
 #define C_ERROR "error"
 

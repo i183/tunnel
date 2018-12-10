@@ -154,7 +154,7 @@ void fd_list_to_fd_set(fd_list *fl, fd_set *fs) {
     }
 }
 
-int select_os(fd_list *rl, fd_list *wl, fd_list *el, int timeout_ms) {
+int select_os(fd_list *rl, fd_list *wl, fd_list *el, long timeout_ms) {
     int max_fd = get_max_fd(rl), temp;
     if ((temp = get_max_fd(wl)) > max_fd) {
         max_fd = temp;

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include "client.h"
 #include "common.h"
 #include "../common/command.h"
@@ -77,6 +78,10 @@ int dist_read(struct connection *conn);
  */
 int dist_write(struct connection *conn);
 
+int send_alive(struct connection *tunnel);
+
+long wait_time(struct connection *tunnel);
+
 int handler_1(struct connection *conn);
 
 int handler_2(struct connection *conn);
@@ -108,6 +113,7 @@ int create_tunnel(char *ip, int r_port, int l_port, char *password) {
     struct c_tunnel_conn *tc = malloc(sizeof(struct c_tunnel_conn));
     tc->cmd_buf[0] = 0;
     tc->cmd_buf_len = 0;
+    tc->last_alive = time(null);
     struct connection *tunnel = create_conn(sock, C_TUNNEL, true, tc);
     tunnel->asyn_conn = true;
 
@@ -120,8 +126,13 @@ int create_tunnel(char *ip, int r_port, int l_port, char *password) {
     add_fd_to_rel(tunnel);
 
     while (true) {
-        int count = select_os(&rl, &wl, &el, -1);
-        //printf("count: %d\n", count);
+        int count = select_os(&rl, &wl, &el, wait_time(tunnel));
+        //发送心跳包
+        send_alive(tunnel);
+        if (count <= 0) {
+            continue;
+        }
+
         for (int i = 0; i < el.num; ++i) {
             struct connection *conn = getArrayForPointer(el.li, i);
             if (conn->type == C_TUNNEL) {
@@ -146,6 +157,31 @@ int create_tunnel(char *ip, int r_port, int l_port, char *password) {
     }
 
     return 0;
+}
+
+int send_alive(struct connection *tunnel) {
+    struct c_tunnel_conn *tc = tunnel->ptr;
+    if (time(null) - tc->last_alive < C_ALIVE_SECOND) {
+        return 1;
+    }
+    char msg[20];
+    sprintf(msg, "%s\n", ALIVE);
+    if (write_data(tunnel, msg, strlen(msg)) == -1) {
+        return -1;
+    }
+    tc->last_alive = time(null);
+    printf("Send alive, Current timestamp %ld\n", tc->last_alive);
+    return 0;
+}
+
+long wait_time(struct connection *tunnel) {
+    struct c_tunnel_conn *tc = tunnel->ptr;
+    time_t t = time(null) - tc->last_alive;
+    if (t >= C_ALIVE_SECOND) {
+        return 0;
+    } else {
+        return (C_ALIVE_SECOND - t) * 1000;
+    }
 }
 
 int dist_read(struct connection *conn) {

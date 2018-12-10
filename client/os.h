@@ -87,6 +87,6 @@ typedef struct {
  * @param timeout_ms 超时时间（毫秒）-1 无限等待  0立即返回
  * @return
  */
-int select_os(fd_list *rl, fd_list *wl, fd_list *el, int timeout_ms);
+int select_os(fd_list *rl, fd_list *wl, fd_list *el, long timeout_ms);
 
 #endif //TUNNEL_OS_H

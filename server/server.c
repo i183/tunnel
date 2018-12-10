@@ -72,7 +72,6 @@ int start(int port, char *password) {
     while (true) {
         // 等待事件
         int wait_count = epoll_wait(epfd, event, MAX_EVENT, -1);
-        //printf("wait_count: %d\n", wait_count);
 
         for (int i = 0; i < wait_count; i++) {
             struct epoll_event e = event[i];
@@ -337,7 +336,7 @@ int handler_3(int epfd, const struct epoll_event *e) {
             break;
         } else if (strcmp(command, PULL) == 0) {
             //处理pull命令
-            printf("++++++++receive pull\n");
+            printf("Receive pull\n");
             if (pull_cmd(epfd, conn, buf) == -1) {
                 done = true;
                 break;
@@ -371,7 +370,6 @@ int handler_4(int epfd, const struct epoll_event *e) {
 
         char buf[READ_BUF_LEN];
         ssize_t len = read(conn->fd, buf, READ_BUF_LEN);
-        printf("handler_4 len: %ld\n", len);
         if (len == -1) {
             if (EAGAIN != errno) {
                 perror("Read data");
@@ -383,7 +381,6 @@ int handler_4(int epfd, const struct epoll_event *e) {
             break;
         }
         buf[len] = 0;
-
         printf("handler_4 Read the content: %s\n", buf);
     }
 

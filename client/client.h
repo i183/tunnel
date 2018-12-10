@@ -8,6 +8,8 @@
 #define C_R_SERVER 2
 #define C_L_SERVER 3
 
+#define C_ALIVE_SECOND 60
+
 struct connection {
     socket_t fd;
     char type; //1.与服务器建立的隧道 2.远程服务器连接 3.本地服务器连接
@@ -25,6 +27,7 @@ struct connection {
 struct c_tunnel_conn {
     char cmd_buf[1024 * 2];
     int cmd_buf_len;
+    time_t last_alive; //最后一次发送心跳时间（秒）
 };
 
 /**
