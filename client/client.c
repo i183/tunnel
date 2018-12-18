@@ -357,8 +357,9 @@ int handler_1(struct connection *conn) {
                 sscanf(line, "success %d %d %s", &rfd, &a_port, token);
                 printf("Successfully connected, address: %s:%d\n", rip, a_port);
             } else if (strcmp(command, REQUEST) == 0) {
-                //printf("request command\n");
                 request();
+            }  else if (strcmp(command, C_ERROR) == 0) {
+                printf("%s\n", line);
             } else {
                 done = true;
                 printf("Unknown command: %s\n", command);

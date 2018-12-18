@@ -38,9 +38,35 @@ int get_system_type() {
 boolean memeq(void *p1, void *p2, int n) {
     char *c1 = p1, *c2 = p2;
     for (; n > 0; c1++, c2++, n--) {
-        if (*c1 != *c2)  {
+        if (*c1 != *c2) {
             return false;
         }
     }
     return true;
+}
+
+int enter(void *dest, size_t dest_size, char *def) {
+    if (fgets(dest, dest_size, stdin) != NULL) {
+        /**
+         * Find the newline and, if present, zero it out
+         */
+        char *newline = strchr(dest, '\n');
+        if (newline)
+            *newline = 0;
+
+        if (strlen(dest) == 0) {
+            strcpy(dest, def);
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+    return -1;
+}
+
+void clear_stdin() {
+    char c;
+    while ((c = getchar()) != EOF && c != '\n') {
+        printf("%c", c);
+    };
 }

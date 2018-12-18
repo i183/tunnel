@@ -5,6 +5,8 @@
 #ifndef LEARN_C_COMMON_H
 #define LEARN_C_COMMON_H
 
+#include <stdio.h>
+
 #ifndef NULL
 #define NULL ((void *)0)
 #endif
@@ -48,5 +50,9 @@ int get_system_type();
  * @return
  */
 boolean memeq(void *p1, void *p2, int n);
+
+int enter(void *dest, size_t dest_size, char *def);
+
+void clear_stdin();
 
 #endif //LEARN_C_COMMON_H
