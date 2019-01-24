@@ -16,8 +16,9 @@ $ tunneld
 $ Enter listening port(default 8877):8877
 $ Enter connection password(default maqian.cc):maqian.cc
 $ Port:8877, Password:maqian.cc
+$ Listening...
 ```
-这时 tunneld 已启动成功，等待客户端连接
+这时 tunneld 已启动成功，等待客户端连接。
 
 ## tunnel（客户端）使用说明
 执行 tunnel 文件
