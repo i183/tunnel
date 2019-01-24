@@ -69,6 +69,8 @@ int start(int port, char *password) {
         return -1;
     }
 
+    printf("Listening...\n");
+
     while (true) {
         // 等待事件
         int wait_count = epoll_wait(epfd, event, MAX_EVENT, -1);
@@ -277,7 +279,7 @@ int handler_2(int epfd, const struct epoll_event *e) {
 
         char msg[20];
         sprintf(msg, "%s\n", REQUEST);
-        printf("Send request\n");
+        //printf("Send request\n");
         int flag = write_data(lu->tunnel_conn, msg, strlen(msg)); //通知客户端有新的请求
         if (flag == -1) {
             tag_close_conn(conn, tag);
@@ -332,7 +334,7 @@ int handler_3(int epfd, const struct epoll_event *e) {
             break;
         } else if (strcmp(command, PULL) == 0) {
             //处理pull命令
-            printf("Receive pull\n");
+            //printf("Receive pull\n");
             if (pull_cmd(epfd, conn, buf) == -1) {
                 done = true;
                 break;
@@ -376,7 +378,7 @@ int handler_4(int epfd, const struct epoll_event *e) {
             break;
         }
         buf[len] = 0;
-        printf("handler_4 Read the content: %s\n", buf);
+        //printf("handler_4 Read the content: %s\n", buf);
     }
 
     if (done) {

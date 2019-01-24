@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <memory.h>
 #include <time.h>
+#include <arpa/inet.h>
 #include "tunnel.h"
 #include "server.h"
 #include "common.h"
@@ -148,6 +149,10 @@ int create_tunnel(int epfd, struct connection *conn) {
         return -1;
     }
 
-    printf("Change type to tunnel.\n");
+    struct sockaddr_in in_addr = {0};
+    socklen_t nl = sizeof(in_addr);
+    getpeername(conn->fd, (struct sockaddr *) &in_addr, &nl);
+    printf("Accept client IP:%s\n", inet_ntoa(in_addr.sin_addr));
+    //printf("Change type to tunnel.\n");
     return listenfd;
 }
