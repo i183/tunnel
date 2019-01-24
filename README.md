@@ -1,10 +1,10 @@
 # Tunnel
-Tunnel是一款单线程、轻量级和高性能的内网穿透程序，支持TCP流量转发（支持任何TCP上层协议，包括HTTP，SSH等）。
+Tunnel是一款单线程、轻量级和高性能的内网穿透程序，支持TCP流量转发（支持任何TCP上层协议，包括HTTP，SSH等），支持多客户端同时连接。
 
 解决公网无法访问内网网络服务问题，使内网网络服务能被公网访问。
 
 ## 说明
-- 该项目使用CMake构建，Linux系统编译后会产生两个可执行文件，tunneld（服务器端）和tunnel（客户端），其他系统只会产生tunnel（客户端）。
+- 该项目使用CMake构建，Linux系统编译后会产生两个可执行文件，tunneld（服务器端）和tunnel（客户端），其他系统编译后只会产生tunnel（客户端）。
 - tunneld考虑性能原因，使用epoll I/O模型，仅支持Linux系统，且Linux内核版本要大于等于2.5.44。
 - tunnel使用select I/O模型，支持主流系统（Mac OS、Windows、Linux）。
 - 公网映射端口为动态分配，暂时不支持指定端口。
