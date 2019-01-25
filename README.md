@@ -1,7 +1,7 @@
 # Tunnel
 Tunnel是一款单线程、轻量级和高性能的内网穿透程序，支持TCP流量转发（支持任何TCP上层协议，包括HTTP，SSH等），支持多客户端同时连接。
 
-解决公网无法访问内网网络服务问题，使内网网络服务能被公网访问。
+解决公网无法访问内部网络服务问题，使内部网络服务能被公网访问。
 
 ## 说明
 - 该项目使用CMake构建，Linux系统编译后会产生两个可执行文件，tunneld（服务器端）和tunnel（客户端），其他系统编译后只会产生tunnel（客户端）。
@@ -31,4 +31,4 @@ $ Enter local port:22
 $ Server IP:xx.xx.xxx.xxx, Server Port:8877, Password:maqian.cc, Local Port:22
 $ Successfully connected, address: xx.xx.xxx.xxx:45915
 ```
-这样 tunnel 就连接服务器成功了，address是映射到公网的IP和端口，通过访问address的IP和端口就可以访问内网网络服务了。
+这样 tunnel 就连接服务器成功了，address是映射到公网的IP和端口，通过访问address的IP和端口就可以访问内部网络服务了。
