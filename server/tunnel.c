@@ -136,7 +136,7 @@ int create_tunnel(int epfd, struct connection *conn) {
 
     // 设置epoll的事件
     if (epoll_ctl(epfd, EPOLL_CTL_ADD, listenfd, &ev) == -1) {
-        perror("Set epoll_ctl");
+        log_err("Set epoll_ctl");
         return -1;
     }
 
@@ -152,7 +152,9 @@ int create_tunnel(int epfd, struct connection *conn) {
     struct sockaddr_in in_addr = {0};
     socklen_t nl = sizeof(in_addr);
     getpeername(conn->fd, (struct sockaddr *) &in_addr, &nl);
-    printf("Accept client IP:%s\n", inet_ntoa(in_addr.sin_addr));
+    char info[256];
+    sprintf(info, "Accept client IP:%s\n", inet_ntoa(in_addr.sin_addr));
+    log_info(info);
     //printf("Change type to tunnel.\n");
     return listenfd;
 }

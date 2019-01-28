@@ -17,4 +17,10 @@ int make_socket_non_blocking(int fd);
 
 int make_socket_block(int fd);
 
+void log_info(const char *str);
+
+void log_err(const char *str);
+
+boolean is_use(int port);
+
 #endif //TUNNEL_COMMON_H

@@ -53,11 +53,11 @@ int start(int port, char *password) {
     struct connection *conn = create_conn(listenfd, S_LISTEN_CLIENT, NULL);
 
     struct epoll_event ev, event[MAX_EVENT];
-
+    log_info("Listening...\n");
     // 创建epoll实例
     epfd = epoll_create1(0);
     if (epfd == 1) {
-        perror("Create epoll instance");
+        log_err("Create epoll instance");
         return -1;
     }
 
@@ -65,11 +65,9 @@ int start(int port, char *password) {
     ev.events = EPOLLIN | EPOLLET;//边缘触发选项
     // 设置epoll的事件
     if (epoll_ctl(epfd, EPOLL_CTL_ADD, listenfd, &ev) == -1) {
-        perror("Set epoll_ctl");
+        log_err("Set epoll_ctl");
         return -1;
     }
-
-    printf("Listening...\n");
 
     while (true) {
         // 等待事件
@@ -82,7 +80,7 @@ int start(int port, char *password) {
 
             // 判断epoll是否发生错误
             if (events & EPOLLERR || events & EPOLLHUP) {
-                printf("Epoll has error\n");
+                log_err("Epoll has error\n");
                 tag_close_conn(conn, tag);
                 continue;
             }
@@ -136,7 +134,7 @@ int handler_write(const struct epoll_event *e) {
     ssize_t len = write(conn->fd, conn->write_buf, conn->len);
     if ((len == -1 && EAGAIN != errno) || len == 0) {
         //写入数据时出错或连接关闭
-        perror("write");
+        log_err("write");
         return -1;
     } else if (len == -1) {
         return 1;
@@ -166,7 +164,7 @@ int read_write_client(struct connection *conn) {
         ssize_t len = read(conn->fd, buf, READ_BUF_LEN);
         if (len == -1) {
             if (EAGAIN != errno) {
-                perror("Read data");
+                log_err("Read data");
                 return -1;
             }
             break;
@@ -200,7 +198,7 @@ int read_write_user(struct connection *conn) {
         ssize_t len = read(conn->fd, buf, READ_BUF_LEN);
         if (len == -1) {
             if (EAGAIN != errno) {
-                perror("Read data");
+                log_err("Read data");
                 return -1;
             }
             break;
@@ -233,7 +231,7 @@ int handler_1(int epfd, const struct epoll_event *e) {
         //printf("Accept client IP:%s, Port:%d\n", inet_ntoa(in_addr.sin_addr), ntohs(in_addr.sin_port));
 
         if (make_socket_non_blocking(accp_fd) == -1) {
-            perror("Accept make socket non blocking");
+            log_err("Accept make socket non blocking");
             return -1;
         }
 
@@ -244,7 +242,7 @@ int handler_1(int epfd, const struct epoll_event *e) {
 
         // 为新accept的 file describe 设置epoll事件
         if (epoll_ctl(epfd, EPOLL_CTL_ADD, accp_fd, &ev) == -1) {
-            perror("epoll_ctl");
+            log_err("epoll_ctl");
             return -1;
         }
 
@@ -269,7 +267,7 @@ int handler_2(int epfd, const struct epoll_event *e) {
         //printf("Accept user IP:%s, Port:%d\n", inet_ntoa(in_addr.sin_addr), ntohs(in_addr.sin_port));
 
         if (make_socket_non_blocking(accp_fd) == -1) {
-            perror("Accept make socket non blocking");
+            log_err("Accept make socket non blocking");
             return -1;
         }
 
@@ -307,7 +305,7 @@ int handler_3(int epfd, const struct epoll_event *e) {
         ssize_t len = read(conn->fd, buf, READ_BUF_LEN);
         if (len == -1) {
             if (EAGAIN != errno) {
-                perror("Read data");
+                log_err("Read data");
                 done = true;
             }
             break;
@@ -369,7 +367,7 @@ int handler_4(int epfd, const struct epoll_event *e) {
         ssize_t len = read(conn->fd, buf, READ_BUF_LEN);
         if (len == -1) {
             if (EAGAIN != errno) {
-                perror("Read data");
+                log_err("Read data");
                 done = true;
             }
             break;

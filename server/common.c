@@ -4,6 +4,9 @@
 #include <errno.h>
 #include <memory.h>
 #include <fcntl.h>
+#include <syslog.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include "common.h"
 #include "server.h"
 #include "tunnel.h"
@@ -144,4 +147,39 @@ int make_socket_block(int s) {
     if (mode & O_NONBLOCK)
         return fcntl(s, F_SETFL, mode & ~O_NONBLOCK);
     return 0;
+}
+
+void log_info(const char *str) {
+    syslog(LOG_USER | LOG_INFO, "[INFO] %s\n", str);
+}
+
+void log_err(const char *str) {
+    syslog(LOG_USER | LOG_INFO, "[ERROR] %s\n", str);
+}
+
+boolean is_use(int port) {
+    boolean b = true;
+    struct sockaddr_in addr = {0};
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(port);
+
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd == -1) {
+        goto END;
+    }
+
+    int on = 1;
+    // 打开 socket 端口复用, 防止测试的时候出现 Address already in use
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1) {
+        goto END;
+    }
+
+    if (bind(fd, (const struct sockaddr *) &addr, sizeof(addr)) == -1) {
+        goto END;
+    }
+    b = false;
+    END:
+    close(fd);
+    return b;
 }
