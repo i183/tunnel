@@ -15,7 +15,7 @@ Tunnel是一款单线程、轻量级和高性能的内网穿透程序，支持TC
 $ tunneld
 $ Enter listening port(default 8877):8877
 $ Enter connection password(default maqian.cc):maqian.cc
-$ Port:8877, Password:maqian.ccEpoll has error
+$ Port:8877, Password:maqian.cc
 $ Listening...
 ```
 这时 tunneld 已启动成功，等待客户端连接。
