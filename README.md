@@ -32,3 +32,6 @@ $ Server IP:xx.xx.xxx.xxx, Server Port:8877, Password:maqian.cc, Local Port:22
 $ Successfully connected, address: xx.xx.xxx.xxx:45915
 ```
 这样 tunnel 就连接服务器成功了，address是映射到公网的IP和端口，通过访问address的IP和端口就可以访问内部网络服务了。
+
+## 下载
+[https://github.com/i183/tunnel/releases](https://github.com/i183/tunnel/releases)
